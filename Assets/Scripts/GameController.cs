@@ -26,6 +26,7 @@ public class GameController : MonoBehaviour
     public void Awake()
     {
         GenerateRooms();
+        MoveSelector();
     }
     public void Left(InputAction.CallbackContext context)
     {
@@ -120,16 +121,17 @@ public class GameController : MonoBehaviour
             RoomGrid.Add(new List<GameObject>());
             for (int y = 0; y < LevelDimensions.y; y++)
             {
-                int roomToggle = Random.Range(0, 2);
+                int roomToggle = Random.Range(0, 2);  // Choose room type
                 if (roomToggle == 0)
                 {
                     RoomGrid[x].Add(Instantiate(RoomData.FoodRoomPrefab));
+                    
                 }
                 else
                 {
                     RoomGrid[x].Add(Instantiate(RoomData.BasicRoomPrefab));
                 }
-                RoomGrid[x][y].transform.position = new Vector2(x, y);
+                RoomGrid[x][y].transform.position = new Vector2(x * 10, y * 10);
             }
         }
     }

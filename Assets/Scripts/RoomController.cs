@@ -21,7 +21,8 @@ public class RoomController : MonoBehaviour
         for (int enemyCounter = 0; enemyCounter < numberOfEnemies; enemyCounter++)
         {
             spawnedInteractable = Instantiate(RoomElementData.EnemyPrefab);
-            spawnedInteractable.transform.position = new Vector2(-3 + enemyCounter * 1.5f, 2);
+            spawnedInteractable.transform.parent = gameObject.transform;
+            spawnedInteractable.transform.localPosition = new Vector2(-3 + enemyCounter * 1.5f, 2);
             InteractableList.Add(spawnedInteractable);
         }
 
@@ -29,7 +30,8 @@ public class RoomController : MonoBehaviour
         for (int cupcakeCounter = 0; cupcakeCounter < numberOfCupcakes; cupcakeCounter++)
         {
             spawnedInteractable = Instantiate(RoomElementData.CupcakePrefab);
-            spawnedInteractable.transform.position = new Vector2(3, 0 + cupcakeCounter * 1.5f);
+            spawnedInteractable.transform.parent = gameObject.transform;
+            spawnedInteractable.transform.localPosition = new Vector2(3, -1 + cupcakeCounter * 1.5f);
             InteractableList.Add(spawnedInteractable);
         }
     }

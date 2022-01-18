@@ -345,7 +345,7 @@ MonoBehaviour:
   Player: {fileID: 1539833840}
   Selector: {fileID: 720119515}
   RoomData: {fileID: 11400000, guid: da5038c4ca23a4d4ea21eee5f9703979, type: 2}
-  LevelDimensions: {x: 1, y: 1}
+  LevelDimensions: {x: 2, y: 2}
 --- !u!114 &2093729439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -489,11 +489,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9167530698911963910, guid: d9ceca48a04f3b344b046e6b9c450645, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.04
+      value: -0.04
       objectReference: {fileID: 0}
     - target: {fileID: 9167530698911963910, guid: d9ceca48a04f3b344b046e6b9c450645, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.74
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 9167530698911963910, guid: d9ceca48a04f3b344b046e6b9c450645, type: 3}
       propertyPath: m_LocalPosition.z
