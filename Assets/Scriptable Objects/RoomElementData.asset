@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 64b507d31adf1574baaef64c05fee560, type: 3}
-  m_Name: RoomData
+  m_Script: {fileID: 11500000, guid: 50d4ca9e8a7f1bf46a48c5eefbb1596c, type: 3}
+  m_Name: RoomElementData
   m_EditorClassIdentifier: 
-  BasicRoomPrefab: {fileID: 3082783648714054901, guid: 2a0aca8df456cb941a375312e708b8d4, type: 3}
-  FoodRoomPrefab: {fileID: 3082783648714054901, guid: 4647dfd843ec44740b379de689ddb8ab, type: 3}
+  EnemyPrefab: {fileID: 5177129831798172877, guid: 944a70efb0cd78c48b5407e6cc9ed0a0, type: 3}
+  CupcakePrefab: {fileID: 3283537913259152953, guid: 2287567976a85a44cbf100b118792a19, type: 3}

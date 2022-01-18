@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3082783648714054900}
   - component: {fileID: -8975548604541696835}
   m_Layer: 0
-  m_Name: Room
+  m_Name: Food Room
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 3082783648714054901}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 13.3311, y: 9.9971, z: 1}
+  m_LocalScale: {x: 8, y: 8, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -97,4 +97,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 220732d71c37434438774252fbb3a425, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RoomData: {fileID: 11400000, guid: 1003603678355dc4893feca61d94f71c, type: 2}
+  RoomElementData: {fileID: 11400000, guid: 1003603678355dc4893feca61d94f71c, type: 2}
+  NumberOfEnemies: {x: 0, y: 0}
+  NumberOfCupcakes: {x: 2, y: 4}

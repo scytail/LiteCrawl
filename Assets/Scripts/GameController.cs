@@ -9,7 +9,7 @@ public class GameController : MonoBehaviour
     [SerializeField]
     private GameObject Selector;
     [SerializeField]
-    private GameObject RoomPrefab;
+    private RoomDataScriptableObject RoomData;
     [SerializeField]
     private Vector2Int LevelDimensions;
     
@@ -120,7 +120,15 @@ public class GameController : MonoBehaviour
             RoomGrid.Add(new List<GameObject>());
             for (int y = 0; y < LevelDimensions.y; y++)
             {
-                RoomGrid[x].Add(Instantiate(RoomPrefab));
+                int roomToggle = Random.Range(0, 2);
+                if (roomToggle == 0)
+                {
+                    RoomGrid[x].Add(Instantiate(RoomData.FoodRoomPrefab));
+                }
+                else
+                {
+                    RoomGrid[x].Add(Instantiate(RoomData.BasicRoomPrefab));
+                }
                 RoomGrid[x][y].transform.position = new Vector2(x, y);
             }
         }

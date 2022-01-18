@@ -4,7 +4,11 @@ using UnityEngine;
 public class RoomController : MonoBehaviour
 {
     [SerializeField]
-    private RoomDataScriptableObject RoomData;
+    private RoomElementDataScriptableObject RoomElementData;
+    [SerializeField]
+    private Vector2Int NumberOfEnemies;
+    [SerializeField]
+    private Vector2Int NumberOfCupcakes;
     [System.NonSerialized]
     public List<GameObject> InteractableList;
 
@@ -12,16 +16,21 @@ public class RoomController : MonoBehaviour
     {
         InteractableList = new List<GameObject>();
 
-        GameObject spawnedInteractable = Instantiate(RoomData.EnemyPrefab);
-        spawnedInteractable.transform.position = new Vector2(-3, 2);
-        InteractableList.Add(spawnedInteractable);
+        int numberOfEnemies = Random.Range(NumberOfEnemies.x, NumberOfEnemies.y + 1);
+        GameObject spawnedInteractable;
+        for (int enemyCounter = 0; enemyCounter < numberOfEnemies; enemyCounter++)
+        {
+            spawnedInteractable = Instantiate(RoomElementData.EnemyPrefab);
+            spawnedInteractable.transform.position = new Vector2(-3 + enemyCounter * 1.5f, 2);
+            InteractableList.Add(spawnedInteractable);
+        }
 
-        spawnedInteractable = Instantiate(RoomData.EnemyPrefab);
-        spawnedInteractable.transform.position = new Vector2(3, 2);
-        InteractableList.Add(spawnedInteractable);
-
-        spawnedInteractable = Instantiate(RoomData.CupcakePrefab);
-        spawnedInteractable.transform.position = new Vector2(4, 1);
-        InteractableList.Add(spawnedInteractable);
+        int numberOfCupcakes = Random.Range(NumberOfCupcakes.x, NumberOfCupcakes.y + 1);
+        for (int cupcakeCounter = 0; cupcakeCounter < numberOfCupcakes; cupcakeCounter++)
+        {
+            spawnedInteractable = Instantiate(RoomElementData.CupcakePrefab);
+            spawnedInteractable.transform.position = new Vector2(3, 0 + cupcakeCounter * 1.5f);
+            InteractableList.Add(spawnedInteractable);
+        }
     }
 }
