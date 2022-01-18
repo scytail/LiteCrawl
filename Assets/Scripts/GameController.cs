@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 public class GameController : MonoBehaviour
 {
     [SerializeField]
+    private GameObject Camera;
+    [SerializeField]
     private GameObject Player;
     [SerializeField]
     private GameObject Selector;
@@ -16,7 +18,8 @@ public class GameController : MonoBehaviour
     private List<List<GameObject>> RoomGrid;
     private int SelectedTargetIndex = 0;
     private Vector2Int CurrentLocation;
-    private GameObject CurrentRoom { get
+    private GameObject CurrentRoom { 
+        get
         {
             return RoomGrid[CurrentLocation.x][CurrentLocation.y];
         } 
@@ -32,32 +35,56 @@ public class GameController : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            Debug.Log("Left");
-            ResetSelector();
+            if (CurrentLocation.x > 0)
+            {
+                CurrentLocation.x -= 1;
+                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x,
+                                                        CurrentRoom.transform.position.y,
+                                                        Camera.transform.position.z);
+                ResetSelector();
+            }
         }
     }
     public void Right(InputAction.CallbackContext context)
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            Debug.Log("Right");
-            ResetSelector();
+            if (CurrentLocation.x < RoomGrid.Count - 1)
+            {
+                CurrentLocation.x += 1;
+                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x, 
+                                                        CurrentRoom.transform.position.y, 
+                                                        Camera.transform.position.z);
+                ResetSelector();
+            }
         }
     }
     public void Up(InputAction.CallbackContext context)
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            Debug.Log("Up");
-            ResetSelector();
+            if (CurrentLocation.y > 0)
+            {
+                CurrentLocation.y -= 1;
+                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x,
+                                                        CurrentRoom.transform.position.y,
+                                                        Camera.transform.position.z);
+                ResetSelector();
+            }
         }
     }
     public void Down(InputAction.CallbackContext context)
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            Debug.Log("Down");
-            ResetSelector();
+            if (CurrentLocation.y < RoomGrid[CurrentLocation.x].Count - 1)
+            {
+                CurrentLocation.y += 1;
+                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x,
+                                                        CurrentRoom.transform.position.y,
+                                                        Camera.transform.position.z);
+                ResetSelector();
+            }
         }
     }
     public void ChangeTargets(InputAction.CallbackContext context)
