@@ -4,7 +4,8 @@ using UnityEngine;
 public enum RoomType
 {
     BasicRoom,
-    FoodRoom
+    FoodRoom,
+    EmptyRoom
 }
 
 public enum MoveDirection
@@ -95,6 +96,9 @@ public class LevelController : MonoBehaviour
                     case RoomType.FoodRoom:
                         PlaceRoom(x, y, RoomData.FoodRoomPrefab);
                         break;
+                    case RoomType.EmptyRoom:
+                        PlaceRoom(x, y, RoomData.EmptyRoomPrefab);
+                        break;
                 }
             }
         }
@@ -115,10 +119,13 @@ public class LevelController : MonoBehaviour
             roomTypeGrid.Add(new List<RoomType>());
             for (int y = 0; y < LevelDimensions.y; y++)
             {
-                switch (Random.Range(0, 2))
+                switch (Random.Range(0, 3))
                 {
                     case 1:
                         roomTypeGrid[x].Add(RoomType.FoodRoom);
+                        break;
+                    case 2:
+                        roomTypeGrid[x].Add(RoomType.EmptyRoom);
                         break;
                     default:
                         roomTypeGrid[x].Add(RoomType.BasicRoom);

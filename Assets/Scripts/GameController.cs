@@ -27,7 +27,7 @@ public class GameController : MonoBehaviour
     
 
     #region Unity Events
-    public void Awake()
+    public void Start()
     {
         MoveSelector();
     }
@@ -100,8 +100,11 @@ public class GameController : MonoBehaviour
         if (context.phase == InputActionPhase.Performed)
         {
             List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
-            Player.GetComponent<PlayerController>().Interact(new List<GameObject> { roomInteractableList[SelectedTargetIndex]});
-            DoEnemyTurns();
+            if (roomInteractableList.Count > 0)
+            {
+                Player.GetComponent<PlayerController>().Interact(new List<GameObject> { roomInteractableList[SelectedTargetIndex]});
+                DoEnemyTurns();
+            }
         }
     }
     #endregion
@@ -121,12 +124,16 @@ public class GameController : MonoBehaviour
         List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
         if (roomInteractableList.Count > 0)
         {
+            if (!Selector.gameObject.GetComponent<Renderer>().enabled)
+            {
+                Selector.gameObject.GetComponent<Renderer>().enabled = true;
+            }
             Transform targetTransform = roomInteractableList[SelectedTargetIndex].transform;
             Selector.transform.position = new Vector2(targetTransform.position.x, targetTransform.position.y + 2);
         }
         else
         {
-            Destroy(Selector);
+            Selector.gameObject.GetComponent<Renderer>().enabled = false;
         }
     }
 
