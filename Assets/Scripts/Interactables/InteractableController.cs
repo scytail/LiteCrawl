@@ -3,7 +3,8 @@ using UnityEngine;
 public abstract class InteractableController : MonoBehaviour
 {
     private GameObject _gameController;
-    protected GameObject GameManager { get
+    protected GameObject GameManager { 
+        get
         {
             if (!_gameController)
             {
