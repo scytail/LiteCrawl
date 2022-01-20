@@ -10,36 +10,35 @@ public class GameController : MonoBehaviour
     private GameObject Player;
     [SerializeField]
     private GameObject Selector;
-    [SerializeField]
-    private RoomDataScriptableObject RoomData;
-    [SerializeField]
-    private Vector2Int LevelDimensions;
     
-    private List<List<GameObject>> RoomGrid;
     private int SelectedTargetIndex = 0;
-    private Vector2Int CurrentLocation;
-    private GameObject CurrentRoom { 
+    private LevelController _levelController;
+    private LevelController LevelController
+    {
         get
         {
-            return RoomGrid[CurrentLocation.x][CurrentLocation.y];
-        } 
+            if (!_levelController)
+            {
+                _levelController = gameObject.GetComponent<LevelController>();
+            }
+            return _levelController;
+        }
     }
+    
 
     #region Unity Events
     public void Awake()
     {
-        GenerateRooms();
         MoveSelector();
     }
     public void Left(InputAction.CallbackContext context)
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            if (CurrentLocation.x > 0)
+            if (LevelController.MoveToNewRoom(MoveDirection.Left))
             {
-                CurrentLocation.x -= 1;
-                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x,
-                                                        CurrentRoom.transform.position.y,
+                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
+                                                        LevelController.CurrentRoom.transform.position.y,
                                                         Camera.transform.position.z);
                 ResetSelector();
             }
@@ -49,11 +48,10 @@ public class GameController : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            if (CurrentLocation.x < RoomGrid.Count - 1)
+            if (LevelController.MoveToNewRoom(MoveDirection.Right))
             {
-                CurrentLocation.x += 1;
-                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x, 
-                                                        CurrentRoom.transform.position.y, 
+                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
+                                                        LevelController.CurrentRoom.transform.position.y, 
                                                         Camera.transform.position.z);
                 ResetSelector();
             }
@@ -63,11 +61,10 @@ public class GameController : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            if (CurrentLocation.y > 0)
+            if (LevelController.MoveToNewRoom(MoveDirection.Up))
             {
-                CurrentLocation.y -= 1;
-                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x,
-                                                        CurrentRoom.transform.position.y,
+                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
+                                                        LevelController.CurrentRoom.transform.position.y,
                                                         Camera.transform.position.z);
                 ResetSelector();
             }
@@ -77,11 +74,10 @@ public class GameController : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            if (CurrentLocation.y < RoomGrid[CurrentLocation.x].Count - 1)
+            if (LevelController.MoveToNewRoom(MoveDirection.Down))
             {
-                CurrentLocation.y += 1;
-                Camera.transform.position = new Vector3(CurrentRoom.transform.position.x,
-                                                        CurrentRoom.transform.position.y,
+                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
+                                                        LevelController.CurrentRoom.transform.position.y,
                                                         Camera.transform.position.z);
                 ResetSelector();
             }
@@ -91,7 +87,7 @@ public class GameController : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            List<GameObject> roomInteractableList = CurrentRoom.GetComponent<RoomController>().InteractableList;
+            List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
             if (roomInteractableList.Count > 0)
             {
                 SelectedTargetIndex = (SelectedTargetIndex + 1) % roomInteractableList.Count;
@@ -103,7 +99,7 @@ public class GameController : MonoBehaviour
     {
         if (context.phase == InputActionPhase.Performed)
         {
-            List<GameObject> roomInteractableList = CurrentRoom.GetComponent<RoomController>().InteractableList;
+            List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
             Player.GetComponent<PlayerController>().Interact(new List<GameObject> { roomInteractableList[SelectedTargetIndex]});
             DoEnemyTurns();
         }
@@ -113,7 +109,7 @@ public class GameController : MonoBehaviour
     #region Game Control
     public void Kill(GameObject target)
     {
-        List<GameObject> roomInteractableList = CurrentRoom.GetComponent<RoomController>().InteractableList;
+        List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
         roomInteractableList.Remove(target);
         Destroy(target);
         SelectedTargetIndex = 0;
@@ -122,7 +118,7 @@ public class GameController : MonoBehaviour
 
     private void MoveSelector()
     {
-        List<GameObject> roomInteractableList = CurrentRoom.GetComponent<RoomController>().InteractableList;
+        List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
         if (roomInteractableList.Count > 0)
         {
             Transform targetTransform = roomInteractableList[SelectedTargetIndex].transform;
@@ -140,32 +136,9 @@ public class GameController : MonoBehaviour
         MoveSelector();
     }
 
-    private void GenerateRooms()
-    {
-        RoomGrid = new List<List<GameObject>>();
-        for (int x = 0; x < LevelDimensions.x; x++)
-        {
-            RoomGrid.Add(new List<GameObject>());
-            for (int y = 0; y < LevelDimensions.y; y++)
-            {
-                int roomToggle = Random.Range(0, 2);  // Choose room type
-                if (roomToggle == 0)
-                {
-                    RoomGrid[x].Add(Instantiate(RoomData.FoodRoomPrefab));
-                    
-                }
-                else
-                {
-                    RoomGrid[x].Add(Instantiate(RoomData.BasicRoomPrefab));
-                }
-                RoomGrid[x][y].transform.position = new Vector2(x * 10, y * 10);
-            }
-        }
-    }
-
     private void DoEnemyTurns()
     {
-        List<GameObject> roomInteractableList = CurrentRoom.GetComponent<RoomController>().InteractableList;
+        List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
         foreach (GameObject interactable in roomInteractableList)
         {
             if (interactable.tag == "Enemy")
