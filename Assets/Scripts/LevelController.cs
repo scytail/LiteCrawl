@@ -16,29 +16,6 @@ public enum MoveDirection
     Right
 }
 
-class DoorsEnabled
-{
-    public bool North;
-    public bool South;
-    public bool West;
-    public bool East;
-
-    public DoorsEnabled()
-    {
-        North = true;
-        South = true;
-        West = true;
-        East = true;
-    }
-    public DoorsEnabled(bool north, bool south, bool west, bool east)
-    {
-        North = north;
-        South = south;
-        West = west;
-        East = east;
-    }
-}
-
 public class LevelController : MonoBehaviour
 {   
     [SerializeField]
@@ -109,8 +86,8 @@ public class LevelController : MonoBehaviour
     private void GenerateRooms()
     {
         List<List<RoomType>> levelMap = CalculateLevelRoomTypes();
-        List<DoorsEnabled> doors = CalculateRoomConnections(levelMap);
-        PlaceRooms(levelMap, doors);
+        LevelDoorData levelDoorData = CalculateRoomConnections(levelMap);
+        PlaceRooms(levelMap, levelDoorData);
     }
 
     private List<List<RoomType>> CalculateLevelRoomTypes()
@@ -146,69 +123,29 @@ public class LevelController : MonoBehaviour
         return roomTypeGrid;
     }
 
-    private List<DoorsEnabled> CalculateRoomConnections(List<List<RoomType>> levelMap)
+    private LevelDoorData CalculateRoomConnections(List<List<RoomType>> levelMap)
     {
-        List<DoorsEnabled> adjacencyList = new List<DoorsEnabled>(LevelDimensions.x * LevelDimensions.y);
-        bool allowNorth, allowSouth, allowEast, allowWest;
-
-        // Init the adjacency list
-        for (int i = 0; i < LevelDimensions.x * LevelDimensions.y; i++)
-        {
-            adjacencyList.Add(new DoorsEnabled());
-        }
+        LevelDoorData adjacencyList = new LevelDoorData(LevelDimensions.x, LevelDimensions.y);
 
         for (int row = 0; row < LevelDimensions.x; row++)
         {
             for (int column = 0; column < LevelDimensions.y; column++)
             {
-                int roomId = GetRoomIdFromCoordinates(row, column);
                 // edges should never have doors
-                allowNorth = row != 0;
-                allowSouth = row != levelMap.Count - 1;
-                allowWest = column != 0;
-                allowEast = column != levelMap[row].Count - 1;
+                bool allowNorth = row != 0;
+                bool allowSouth = row != levelMap.Count - 1;
+                bool allowWest = column != 0;
+                bool allowEast = column != levelMap[row].Count - 1;
 
-                // Update room
-                adjacencyList[roomId] = new DoorsEnabled(allowNorth, allowSouth, allowWest, allowEast);
-
-                // Update adjacent north room
-                int relatedRoomId = roomId - LevelDimensions.x;
-                if (relatedRoomId >= 0)
-                {
-                    DoorsEnabled relatedRoomDoors = adjacencyList[relatedRoomId];
-                    adjacencyList[relatedRoomId] = new DoorsEnabled(relatedRoomDoors.North, allowNorth, relatedRoomDoors.West, relatedRoomDoors.East);
-                }
-
-                // Update adjacent south room
-                relatedRoomId = roomId + LevelDimensions.x;
-                if (relatedRoomId < adjacencyList.Count)
-                {
-                    DoorsEnabled relatedRoomDoors = adjacencyList[relatedRoomId];
-                    adjacencyList[relatedRoomId] = new DoorsEnabled(allowSouth, relatedRoomDoors.South, relatedRoomDoors.West, relatedRoomDoors.East);
-                }
-
-                // Update adjacent west room
-                relatedRoomId = roomId - 1;
-                if (relatedRoomId >= 0)
-                {
-                    DoorsEnabled relatedRoomDoors = adjacencyList[relatedRoomId];
-                    adjacencyList[relatedRoomId] = new DoorsEnabled(relatedRoomDoors.North, relatedRoomDoors.South, relatedRoomDoors.West, allowWest);
-                }
-
-                // Update adjacent east room
-                relatedRoomId = roomId + 1;
-                if (relatedRoomId < adjacencyList.Count)
-                {
-                    DoorsEnabled relatedRoomDoors = adjacencyList[relatedRoomId];
-                    adjacencyList[relatedRoomId] = new DoorsEnabled(relatedRoomDoors.North, relatedRoomDoors.South, allowEast, relatedRoomDoors.East);
-                }
+                // Update room (and adjacent rooms)
+                adjacencyList.UpdateRoom(row, column, new RoomDoorData(allowNorth, allowSouth, allowWest, allowEast));
             }
         }
 
         return adjacencyList;
     }
 
-    private void PlaceRooms(List<List<RoomType>> levelMap, List<DoorsEnabled> doors)
+    private void PlaceRooms(List<List<RoomType>> levelMap, LevelDoorData levelDoorData)
     {
         RoomGrid = new List<List<GameObject>>();
         for (int x = 0; x < LevelDimensions.x; x++)
@@ -219,31 +156,26 @@ public class LevelController : MonoBehaviour
                 switch (levelMap[x][y])
                 {
                     case RoomType.BasicRoom:
-                        PlaceRoom(x, y, RoomData.BasicRoomPrefab, doors[GetRoomIdFromCoordinates(x, y)]);
+                        PlaceRoom(x, y, RoomData.BasicRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
                         break;
                     case RoomType.FoodRoom:
-                        PlaceRoom(x, y, RoomData.FoodRoomPrefab, doors[GetRoomIdFromCoordinates(x, y)]);
+                        PlaceRoom(x, y, RoomData.FoodRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
                         break;
                     case RoomType.EmptyRoom:
-                        PlaceRoom(x, y, RoomData.EmptyRoomPrefab, doors[GetRoomIdFromCoordinates(x, y)]);
+                        PlaceRoom(x, y, RoomData.EmptyRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
                         break;
                 }
             }
         }
     }
 
-    private int GetRoomIdFromCoordinates(int row, int column)
-    {
-        return row * LevelDimensions.x + column;
-    }
-
-    private void PlaceRoom(int row, int column, GameObject roomPrefab, DoorsEnabled doors)
+    private void PlaceRoom(int row, int column, GameObject roomPrefab, RoomDoorData doors)
     {
         RoomGrid[row].Add(Instantiate(roomPrefab));
         RoomGrid[row][column].transform.position = new Vector2(column * 10, row * -10);
-        RoomGrid[row][column].gameObject.GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled = doors.North;
-        RoomGrid[row][column].gameObject.GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled = doors.South;
-        RoomGrid[row][column].gameObject.GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled = doors.West;
-        RoomGrid[row][column].gameObject.GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled = doors.East;
+        RoomGrid[row][column].gameObject.GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled = doors.NorthEnabled;
+        RoomGrid[row][column].gameObject.GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled = doors.SouthEnabled;
+        RoomGrid[row][column].gameObject.GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled = doors.WestEnabled;
+        RoomGrid[row][column].gameObject.GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled = doors.EastEnabled;
     }
 }
