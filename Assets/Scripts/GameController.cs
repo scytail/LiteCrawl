@@ -27,9 +27,10 @@ public class GameController : MonoBehaviour
     
 
     #region Unity Events
-    public void Start()
+    public void Awake()
     {
-        MoveSelector();
+        gameObject.GetComponent<LevelController>().GenerateRooms();
+        FocusCamera();
     }
     public void Left(InputAction.CallbackContext context)
     {
@@ -37,10 +38,7 @@ public class GameController : MonoBehaviour
         {
             if (LevelController.MoveToNewRoom(MoveDirection.Left))
             {
-                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
-                                                        LevelController.CurrentRoom.transform.position.y,
-                                                        Camera.transform.position.z);
-                ResetSelector();
+                FocusCamera();
             }
         }
     }
@@ -50,10 +48,7 @@ public class GameController : MonoBehaviour
         {
             if (LevelController.MoveToNewRoom(MoveDirection.Right))
             {
-                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
-                                                        LevelController.CurrentRoom.transform.position.y, 
-                                                        Camera.transform.position.z);
-                ResetSelector();
+                FocusCamera();
             }
         }
     }
@@ -63,10 +58,7 @@ public class GameController : MonoBehaviour
         {
             if (LevelController.MoveToNewRoom(MoveDirection.Up))
             {
-                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
-                                                        LevelController.CurrentRoom.transform.position.y,
-                                                        Camera.transform.position.z);
-                ResetSelector();
+                FocusCamera();
             }
         }
     }
@@ -76,10 +68,7 @@ public class GameController : MonoBehaviour
         {
             if (LevelController.MoveToNewRoom(MoveDirection.Down))
             {
-                Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
-                                                        LevelController.CurrentRoom.transform.position.y,
-                                                        Camera.transform.position.z);
-                ResetSelector();
+                FocusCamera();
             }
         }
     }
@@ -141,6 +130,14 @@ public class GameController : MonoBehaviour
     {
         SelectedTargetIndex = 0;
         MoveSelector();
+    }
+
+    private void FocusCamera()
+    {
+        Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
+                                                LevelController.CurrentRoom.transform.position.y,
+                                                Camera.transform.position.z);
+        ResetSelector();
     }
 
     private void DoEnemyTurns()

@@ -7,4 +7,5 @@ public class RoomDataScriptableObject : ScriptableObject
     public GameObject BasicRoomPrefab;
     public GameObject FoodRoomPrefab;
     public GameObject EmptyRoomPrefab;
+    public GameObject DescentRoomPrefab;
 }

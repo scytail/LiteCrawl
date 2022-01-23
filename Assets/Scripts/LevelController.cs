@@ -5,7 +5,9 @@ public enum RoomType
 {
     BasicRoom,
     FoodRoom,
-    EmptyRoom
+    EmptyRoom,
+    StartRoom,
+    DescentRoom
 }
 
 public enum MoveDirection
@@ -35,9 +37,11 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    public void Awake()
+    public void GenerateRooms()
     {
-        GenerateRooms();
+        List<List<RoomType>> levelMap = CalculateLevelRoomTypes();
+        LevelDoorData levelDoorData = CalculateRoomConnections(levelMap);
+        PlaceRooms(levelMap, levelDoorData);
     }
 
     public bool MoveToNewRoom(MoveDirection direction)
@@ -83,13 +87,6 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    private void GenerateRooms()
-    {
-        List<List<RoomType>> levelMap = CalculateLevelRoomTypes();
-        LevelDoorData levelDoorData = CalculateRoomConnections(levelMap);
-        PlaceRooms(levelMap, levelDoorData);
-    }
-
     private List<List<RoomType>> CalculateLevelRoomTypes()
     {
         List<List<RoomType>> roomTypeGrid = new List<List<RoomType>>();
@@ -99,23 +96,42 @@ public class LevelController : MonoBehaviour
         // find path from start to end
         // RNG the rest (don't forget that no room counts as an option here)
 
+        Vector2Int startRoomCoordinates = new Vector2Int(Random.Range(0, LevelDimensions.x), Random.Range(0, LevelDimensions.y));
+
+        Vector2Int descentRoomCoordinates = new Vector2Int(Random.Range(0, LevelDimensions.x), Random.Range(0, LevelDimensions.y));
+        while (descentRoomCoordinates.x == startRoomCoordinates.x && descentRoomCoordinates.y == startRoomCoordinates.y)
+        {
+            descentRoomCoordinates = new Vector2Int(Random.Range(0, LevelDimensions.x), Random.Range(0, LevelDimensions.y));
+        }
+
         // PoC:
         for (int x = 0; x < LevelDimensions.x; x++)
         {
             roomTypeGrid.Add(new List<RoomType>());
             for (int y = 0; y < LevelDimensions.y; y++)
             {
-                switch (Random.Range(0, 3))
+                if (x == startRoomCoordinates.x && y == startRoomCoordinates.y)
                 {
-                    case 1:
-                        roomTypeGrid[x].Add(RoomType.FoodRoom);
-                        break;
-                    case 2:
-                        roomTypeGrid[x].Add(RoomType.EmptyRoom);
-                        break;
-                    default:
-                        roomTypeGrid[x].Add(RoomType.BasicRoom);
-                        break;
+                    roomTypeGrid[x].Add(RoomType.StartRoom);
+                } 
+                else if (x == descentRoomCoordinates.x && y == descentRoomCoordinates.y)
+                {
+                    roomTypeGrid[x].Add(RoomType.DescentRoom);
+                }
+                else
+                {
+                    switch (Random.Range(0, 3))
+                    {
+                        case 1:
+                            roomTypeGrid[x].Add(RoomType.FoodRoom);
+                            break;
+                        case 2:
+                            roomTypeGrid[x].Add(RoomType.EmptyRoom);
+                            break;
+                        default:
+                            roomTypeGrid[x].Add(RoomType.BasicRoom);
+                            break;
+                    }
                 }
             }
         }
@@ -163,6 +179,13 @@ public class LevelController : MonoBehaviour
                         break;
                     case RoomType.EmptyRoom:
                         PlaceRoom(x, y, RoomData.EmptyRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
+                        break;
+                    case RoomType.StartRoom:
+                        PlaceRoom(x, y, RoomData.EmptyRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
+                        CurrentLocation = new Vector2Int(x, y);
+                        break;
+                    case RoomType.DescentRoom:
+                        PlaceRoom(x, y, RoomData.DescentRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
                         break;
                 }
             }

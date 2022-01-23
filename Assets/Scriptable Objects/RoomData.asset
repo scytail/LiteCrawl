@@ -15,3 +15,4 @@ MonoBehaviour:
   BasicRoomPrefab: {fileID: 3082783648714054901, guid: 2a0aca8df456cb941a375312e708b8d4, type: 3}
   FoodRoomPrefab: {fileID: 3082783648714054901, guid: 4647dfd843ec44740b379de689ddb8ab, type: 3}
   EmptyRoomPrefab: {fileID: 3082783648714054901, guid: bd93b43db50ec2641a53fdfa30772c7d, type: 3}
+  DescentRoomPrefab: {fileID: 3082783648714054901, guid: 91c91fbbc8c0af147a64c69fa81e6e5c, type: 3}
