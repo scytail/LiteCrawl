@@ -9,6 +9,11 @@ public class RoomController : MonoBehaviour
     private Vector2Int NumberOfEnemies;
     [SerializeField]
     private Vector2Int NumberOfCupcakes;
+    public GameObject NorthDoor;
+    public GameObject SouthDoor;
+    public GameObject WestDoor;
+    public GameObject EastDoor;
+
     [System.NonSerialized]
     public List<GameObject> InteractableList;
 
