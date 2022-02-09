@@ -10,10 +10,10 @@ public class RoomDoorData
 
     public RoomDoorData()
     {
-        NorthEnabled = true;
-        SouthEnabled = true;
-        WestEnabled = true;
-        EastEnabled = true;
+        NorthEnabled = false;
+        SouthEnabled = false;
+        WestEnabled = false;
+        EastEnabled = false;
     }
     public RoomDoorData(bool north, bool south, bool west, bool east)
     {
@@ -26,67 +26,74 @@ public class RoomDoorData
 
 public class LevelDoorData
 {
-    private List<RoomDoorData> Rooms;
+    private List<List<RoomDoorData>> Rooms;
     private int Rows;
     private int Columns;
 
     public LevelDoorData(int rows, int columns)
     {
-        Rooms = new List<RoomDoorData>(rows*columns);
         Rows = rows;
         Columns = columns;
 
-        for (int i = 0; i < rows*columns; i++)
+        Rooms = new List<List<RoomDoorData>>();
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++)
         {
-            Rooms.Add(new RoomDoorData());
+            Rooms.Add(new List<RoomDoorData>());
+            for (int columnIndex = 0; columnIndex < columns; columnIndex++)
+            {
+                Rooms[rowIndex].Add(new RoomDoorData());
+            }
         }
     }
 
     public void UpdateRoom(int row, int column, RoomDoorData doorData)
     {
-        int roomId = GetRoomIdFromCoordinates(row, column);
-        Rooms[roomId] = doorData;
+        Rooms[row][column] = doorData;
 
-        UpdateAdjacentRooms(roomId, doorData);
+        UpdateAdjacentRooms(row, column, doorData);
     }
 
     public RoomDoorData GetRoomDoorData(int row, int column)
     {
-        return Rooms[GetRoomIdFromCoordinates(row, column)];
+        return Rooms[row][column];
     }
 
-    private void UpdateAdjacentRooms(int roomId, RoomDoorData doorData)
+    private void UpdateAdjacentRooms(int row, int column, RoomDoorData doorData)
     {
         // Update adjacent north room
-        int relatedRoomId = roomId - Rows;
-        if (relatedRoomId >= 0)
+        int relatedRoomRow = row - 1;
+        int relatedRoomColumn = column;
+        if (relatedRoomRow >= 0)
         {
-            RoomDoorData relatedRoomDoors = Rooms[relatedRoomId];
-            Rooms[relatedRoomId] = new RoomDoorData(relatedRoomDoors.NorthEnabled, doorData.NorthEnabled, relatedRoomDoors.WestEnabled, relatedRoomDoors.EastEnabled);
+            RoomDoorData relatedRoomDoors = Rooms[relatedRoomRow][relatedRoomColumn];
+            Rooms[relatedRoomRow][relatedRoomColumn] = new RoomDoorData(relatedRoomDoors.NorthEnabled, doorData.NorthEnabled, relatedRoomDoors.WestEnabled, relatedRoomDoors.EastEnabled);
         }
 
         // Update adjacent south room
-        relatedRoomId = roomId + Rows;
-        if (relatedRoomId < Rooms.Count)
+        relatedRoomRow = row + 1;
+        relatedRoomColumn = column;
+        if (relatedRoomRow < Rooms.Count)
         {
-            RoomDoorData relatedRoomDoors = Rooms[relatedRoomId];
-            Rooms[relatedRoomId] = new RoomDoorData(doorData.SouthEnabled, relatedRoomDoors.SouthEnabled, relatedRoomDoors.WestEnabled, relatedRoomDoors.EastEnabled);
+            RoomDoorData relatedRoomDoors = Rooms[relatedRoomRow][relatedRoomColumn];
+            Rooms[relatedRoomRow][relatedRoomColumn] = new RoomDoorData(doorData.SouthEnabled, relatedRoomDoors.SouthEnabled, relatedRoomDoors.WestEnabled, relatedRoomDoors.EastEnabled);
         }
 
         // Update adjacent west room
-        relatedRoomId = roomId - 1;
-        if (relatedRoomId >= 0)
+        relatedRoomRow = row;
+        relatedRoomColumn = column - 1;
+        if (relatedRoomColumn >= 0)
         {
-            RoomDoorData relatedRoomDoors = Rooms[relatedRoomId];
-            Rooms[relatedRoomId] = new RoomDoorData(relatedRoomDoors.NorthEnabled, relatedRoomDoors.SouthEnabled, relatedRoomDoors.WestEnabled, doorData.WestEnabled);
+            RoomDoorData relatedRoomDoors = Rooms[relatedRoomRow][relatedRoomColumn];
+            Rooms[relatedRoomRow][relatedRoomColumn] = new RoomDoorData(relatedRoomDoors.NorthEnabled, relatedRoomDoors.SouthEnabled, relatedRoomDoors.WestEnabled, doorData.WestEnabled);
         }
 
         // Update adjacent east room
-        relatedRoomId = roomId + 1;
-        if (relatedRoomId < Rooms.Count)
+        relatedRoomRow = row;
+        relatedRoomColumn = column + 1;
+        if (relatedRoomColumn < Rooms.Count)
         {
-            RoomDoorData relatedRoomDoors = Rooms[relatedRoomId];
-            Rooms[relatedRoomId] = new RoomDoorData(relatedRoomDoors.NorthEnabled, relatedRoomDoors.SouthEnabled, doorData.EastEnabled, relatedRoomDoors.EastEnabled);
+            RoomDoorData relatedRoomDoors = Rooms[relatedRoomRow][relatedRoomColumn];
+            Rooms[relatedRoomRow][relatedRoomColumn] = new RoomDoorData(relatedRoomDoors.NorthEnabled, relatedRoomDoors.SouthEnabled, doorData.EastEnabled, relatedRoomDoors.EastEnabled);
         }
     }
 
