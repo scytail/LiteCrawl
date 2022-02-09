@@ -5,7 +5,9 @@ public enum RoomType
 {
     BasicRoom,
     FoodRoom,
-    EmptyRoom
+    EmptyRoom,
+    StartRoom,
+    DescentRoom
 }
 
 public enum MoveDirection
@@ -22,6 +24,9 @@ public class LevelController : MonoBehaviour
     private RoomDataScriptableObject RoomData;
     [SerializeField]
     private Vector2Int LevelDimensions;
+    [SerializeField]
+    [Range(0,100)]
+    private int openDoorChance;
 
     [System.NonSerialized]
     public List<List<GameObject>> RoomGrid;
@@ -35,9 +40,27 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    public void Awake()
+    private class RoomGenData
     {
-        GenerateRooms();
+        public List<List<RoomType>> RoomTypeGrid;
+        public Dictionary<RoomType, Vector2Int> SpecialRooms;
+
+        public RoomGenData()
+        {
+            RoomTypeGrid = new List<List<RoomType>>();
+            SpecialRooms = new Dictionary<RoomType, Vector2Int>();
+        }
+    }
+
+    public void GenerateRooms()
+    {
+        if (LevelDimensions.x < 2 || LevelDimensions.y < 2)
+        {
+            throw new System.ArgumentException("Level Dimensions must be at least 2x2", "LevelDimensions");
+        }
+        RoomGenData roomGenData = CalculateLevelRoomTypes();
+        LevelDoorData levelDoorData = CalculateRoomConnections(roomGenData);
+        PlaceRooms(roomGenData.RoomTypeGrid, levelDoorData);
     }
 
     public bool MoveToNewRoom(MoveDirection direction)
@@ -83,86 +106,241 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    private void GenerateRooms()
+    private RoomGenData CalculateLevelRoomTypes()
     {
-        List<List<RoomType>> levelMap = CalculateLevelRoomTypes();
-        LevelDoorData levelDoorData = CalculateRoomConnections(levelMap);
-        PlaceRooms(levelMap, levelDoorData);
-    }
+        RoomGenData roomGenData = new RoomGenData();
 
-    private List<List<RoomType>> CalculateLevelRoomTypes()
-    {
-        List<List<RoomType>> roomTypeGrid = new List<List<RoomType>>();
+        // Calculate start room
+        Vector2Int startRoomCoordinates = new Vector2Int(Random.Range(0, LevelDimensions.x), Random.Range(0, LevelDimensions.y));
+        roomGenData.SpecialRooms.Add(RoomType.StartRoom, startRoomCoordinates);
 
-        // TODO:
-        // find "start" and "end" (need two new room types: an empty room for the start and a "descent" room for the end)
-        // find path from start to end
-        // RNG the rest (don't forget that no room counts as an option here)
+        // Calculate end room (And make sure it's not the same as the start room)
+        Vector2Int descentRoomCoordinates = new Vector2Int(Random.Range(0, LevelDimensions.x), Random.Range(0, LevelDimensions.y));
+        while (descentRoomCoordinates.x == startRoomCoordinates.x && descentRoomCoordinates.y == startRoomCoordinates.y)
+        {
+            descentRoomCoordinates = new Vector2Int(Random.Range(0, LevelDimensions.x), Random.Range(0, LevelDimensions.y));
+        }
+        roomGenData.SpecialRooms.Add(RoomType.DescentRoom, descentRoomCoordinates);
 
-        // PoC:
+        // Generate the room data
         for (int x = 0; x < LevelDimensions.x; x++)
         {
-            roomTypeGrid.Add(new List<RoomType>());
+            roomGenData.RoomTypeGrid.Add(new List<RoomType>());
             for (int y = 0; y < LevelDimensions.y; y++)
             {
-                switch (Random.Range(0, 3))
+                // Mark the room if it's a special room
+                if (x == startRoomCoordinates.x && y == startRoomCoordinates.y)
                 {
-                    case 1:
-                        roomTypeGrid[x].Add(RoomType.FoodRoom);
-                        break;
-                    case 2:
-                        roomTypeGrid[x].Add(RoomType.EmptyRoom);
-                        break;
-                    default:
-                        roomTypeGrid[x].Add(RoomType.BasicRoom);
-                        break;
+                    roomGenData.RoomTypeGrid[x].Add(RoomType.StartRoom);
+                } 
+                else if (x == descentRoomCoordinates.x && y == descentRoomCoordinates.y)
+                {
+                    roomGenData.RoomTypeGrid[x].Add(RoomType.DescentRoom);
+                }
+                else
+                {
+                    // PoC: randomly generate all other non-special rooms
+                    switch (Random.Range(0, 3))
+                    {
+                        case 1:
+                            roomGenData.RoomTypeGrid[x].Add(RoomType.FoodRoom);
+                            break;
+                        case 2:
+                            roomGenData.RoomTypeGrid[x].Add(RoomType.EmptyRoom);
+                            break;
+                        default:
+                            roomGenData.RoomTypeGrid[x].Add(RoomType.BasicRoom);
+                            break;
+                    }
                 }
             }
         }
 
-        return roomTypeGrid;
+        return roomGenData;
     }
 
-    private LevelDoorData CalculateRoomConnections(List<List<RoomType>> levelMap)
+    private LevelDoorData CalculateRoomConnections(RoomGenData roomGenData)
     {
-        LevelDoorData adjacencyList = new LevelDoorData(LevelDimensions.x, LevelDimensions.y);
+        LevelDoorData levelDoorData = new LevelDoorData(LevelDimensions.x, LevelDimensions.y);
 
-        for (int row = 0; row < LevelDimensions.x; row++)
+        // Calculate required doors
+        List<Vector2Int> pathToExit = CalculatePathFromStartRoomToDescentRoom(roomGenData);
+
+        // Iterate over all the rooms and determine what doors are to be opened for that room
+        for (int rowIndex = 0; rowIndex < LevelDimensions.x; rowIndex++)
         {
-            for (int column = 0; column < LevelDimensions.y; column++)
+            for (int columnIndex = 0; columnIndex < LevelDimensions.y; columnIndex++)
             {
-                // edges should never have doors
-                bool allowNorth = row != 0;
-                bool allowSouth = row != levelMap.Count - 1;
-                bool allowWest = column != 0;
-                bool allowEast = column != levelMap[row].Count - 1;
+                // Load the current data (as other rooms may have set the doors as open already)
+                RoomDoorData currentDoorData = levelDoorData.GetRoomDoorData(rowIndex, columnIndex);
+                bool allowNorth = currentDoorData.NorthEnabled;
+                bool allowSouth = currentDoorData.SouthEnabled;
+                bool allowWest = currentDoorData.WestEnabled;
+                bool allowEast = currentDoorData.EastEnabled;
+
+                // Enable the doors tied to the exit path
+                if (pathToExit.Contains(new Vector2Int(rowIndex, columnIndex)))
+                {
+                    if (pathToExit.Contains(new Vector2Int(rowIndex - 1, columnIndex)))
+                    {
+                        allowNorth = true;
+                    }
+                    if (pathToExit.Contains(new Vector2Int(rowIndex + 1, columnIndex)))
+                    {
+                        allowSouth = true;
+                    }
+                    if (pathToExit.Contains(new Vector2Int(rowIndex, columnIndex - 1)))
+                    {
+                        allowWest = true;
+                    }
+                    if (pathToExit.Contains(new Vector2Int(rowIndex, columnIndex + 1)))
+                    {
+                        allowEast = true;
+                    }
+                }
+
+                // randomly open all still-disabled doors based on their open chance EXCEPT if room is descent room
+                // Note that this only sets north and west doors... because the east and south doors will be set by their adjacent rooms.
+                // If we did all four rooms, we'd effectively be giving each door 2x the chance of opening... simulating a roll with "Advantage."
+                if (new Vector2Int(rowIndex, columnIndex) != roomGenData.SpecialRooms[RoomType.DescentRoom])
+                {
+                    if (!allowNorth && new Vector2Int(rowIndex - 1, columnIndex) != roomGenData.SpecialRooms[RoomType.DescentRoom])
+                    {
+                        allowNorth = Random.Range(0, 100) < openDoorChance;
+                    }
+                    if (!allowWest && new Vector2Int(rowIndex, columnIndex - 1) != roomGenData.SpecialRooms[RoomType.DescentRoom])
+                    {
+                        allowWest = Random.Range(0, 100) < openDoorChance;
+                    }
+                }
+
+                // Edges should never have doors, and thus should override any open doors previously set
+                if (rowIndex == 0)
+                {
+                    allowNorth = false;
+                } 
+                else if (rowIndex == LevelDimensions.x - 1)
+                {
+                    allowSouth = false;
+                } 
+                if (columnIndex == 0)
+                {
+                    allowWest = false;
+                }
+                else if (columnIndex == LevelDimensions.y - 1)
+                {
+                    allowEast = false;
+                }
 
                 // Update room (and adjacent rooms)
-                adjacencyList.UpdateRoom(row, column, new RoomDoorData(allowNorth, allowSouth, allowWest, allowEast));
+                levelDoorData.UpdateRoom(rowIndex, columnIndex, new RoomDoorData(allowNorth, allowSouth, allowWest, allowEast));
             }
         }
 
-        return adjacencyList;
+        return levelDoorData;
+    }
+
+    private List<Vector2Int> CalculatePathFromStartRoomToDescentRoom(RoomGenData roomGenData)
+    {
+        // find a path from start to finish by going either vertical first or horizontal first
+        // (basically making an "L" of sorts)
+        List<Vector2Int> pathToExit = new List<Vector2Int>();
+        pathToExit.Add(roomGenData.SpecialRooms[RoomType.StartRoom]);
+        bool goVerticalBeforeHorizontal = Random.Range(0, 2) == 1;
+        int columnIndex = roomGenData.SpecialRooms[RoomType.StartRoom].y;
+        int rowIndex = roomGenData.SpecialRooms[RoomType.StartRoom].x;
+        int indexIncrement;
+        if (goVerticalBeforeHorizontal)
+        {
+            // rows
+            if (rowIndex > roomGenData.SpecialRooms[RoomType.DescentRoom].x)
+            {
+                indexIncrement = -1;
+            }
+            else
+            {
+                indexIncrement = 1;
+            }
+            while (rowIndex != roomGenData.SpecialRooms[RoomType.DescentRoom].x)
+            {
+                rowIndex += indexIncrement;
+                pathToExit.Add(new Vector2Int(rowIndex, columnIndex));
+            }
+            // columns
+            if (columnIndex > roomGenData.SpecialRooms[RoomType.DescentRoom].y)
+            {
+                indexIncrement = -1;
+            }
+            else
+            {
+                indexIncrement = 1;
+            }
+            while (columnIndex != roomGenData.SpecialRooms[RoomType.DescentRoom].y)
+            {
+                columnIndex += indexIncrement;
+                pathToExit.Add(new Vector2Int(rowIndex, columnIndex));
+            }
+        }
+        else
+        {
+            // columns
+            if (columnIndex > roomGenData.SpecialRooms[RoomType.DescentRoom].y)
+            {
+                indexIncrement = -1;
+            }
+            else
+            {
+                indexIncrement = 1;
+            }
+            while (columnIndex != roomGenData.SpecialRooms[RoomType.DescentRoom].y)
+            {
+                columnIndex += indexIncrement;
+                pathToExit.Add(new Vector2Int(rowIndex, columnIndex));
+            }
+            // rows
+            if (rowIndex > roomGenData.SpecialRooms[RoomType.DescentRoom].x)
+            {
+                indexIncrement = -1;
+            }
+            else
+            {
+                indexIncrement = 1;
+            }
+            while (rowIndex != roomGenData.SpecialRooms[RoomType.DescentRoom].x)
+            {
+                rowIndex += indexIncrement;
+                pathToExit.Add(new Vector2Int(rowIndex, columnIndex));
+            }
+        }
+
+        return pathToExit;
     }
 
     private void PlaceRooms(List<List<RoomType>> levelMap, LevelDoorData levelDoorData)
     {
         RoomGrid = new List<List<GameObject>>();
-        for (int x = 0; x < LevelDimensions.x; x++)
+        for (int rowIndex = 0; rowIndex < LevelDimensions.x; rowIndex++)
         {
             RoomGrid.Add(new List<GameObject>());
-            for (int y = 0; y < LevelDimensions.y; y++)
+            for (int columnIndex = 0; columnIndex < LevelDimensions.y; columnIndex++)
             {
-                switch (levelMap[x][y])
+                switch (levelMap[rowIndex][columnIndex])
                 {
                     case RoomType.BasicRoom:
-                        PlaceRoom(x, y, RoomData.BasicRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
+                        PlaceRoom(rowIndex, columnIndex, RoomData.BasicRoomPrefab, levelDoorData.GetRoomDoorData(rowIndex, columnIndex));
                         break;
                     case RoomType.FoodRoom:
-                        PlaceRoom(x, y, RoomData.FoodRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
+                        PlaceRoom(rowIndex, columnIndex, RoomData.FoodRoomPrefab, levelDoorData.GetRoomDoorData(rowIndex, columnIndex));
                         break;
                     case RoomType.EmptyRoom:
-                        PlaceRoom(x, y, RoomData.EmptyRoomPrefab, levelDoorData.GetRoomDoorData(x, y));
+                        PlaceRoom(rowIndex, columnIndex, RoomData.EmptyRoomPrefab, levelDoorData.GetRoomDoorData(rowIndex, columnIndex));
+                        break;
+                    case RoomType.StartRoom:
+                        PlaceRoom(rowIndex, columnIndex, RoomData.EmptyRoomPrefab, levelDoorData.GetRoomDoorData(rowIndex, columnIndex));
+                        CurrentLocation = new Vector2Int(rowIndex, columnIndex);
+                        break;
+                    case RoomType.DescentRoom:
+                        PlaceRoom(rowIndex, columnIndex, RoomData.DescentRoomPrefab, levelDoorData.GetRoomDoorData(rowIndex, columnIndex));
                         break;
                 }
             }
