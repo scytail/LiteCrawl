@@ -39,6 +39,8 @@ public class LevelController : MonoBehaviour
         }
     }
 
+    #region Room Generation
+    
     public void GenerateRooms()
     {
         if (LevelDimensions.x < 2 || LevelDimensions.y < 2)
@@ -68,6 +70,21 @@ public class LevelController : MonoBehaviour
 
         // Recursively build the dungeon like a depth-first graph, with the root being the start room.
         GenerateRoom(startRoomCoordinates, pointsOfInterest);
+    }
+
+    public void ClearRooms()
+    {
+        if (!(RoomGrid is null))
+        {
+            foreach (List<GameObject> RoomRow in RoomGrid)
+            {
+                foreach (GameObject Room in RoomRow)
+                {
+                    Destroy(Room);
+                }
+            }
+            RoomGrid = null;
+        }
     }
 
     private Vector2Int GeneratePOICoordinates(List<Vector2Int> existingPointsOfInterest)
@@ -147,22 +164,22 @@ public class LevelController : MonoBehaviour
     {
         // Set doors as what the adjacent room's matching door is set to, or closed if the room doesn't exist
         bool allowNorth = false;
-        if (IsRoomVisited(roomCoordinates.x - 1, roomCoordinates.y, out _))
+        if (IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out _))
         {
             allowNorth = RoomGrid[roomCoordinates.x - 1][roomCoordinates.y].gameObject.GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled;
         }
         bool allowSouth = false;
-        if (IsRoomVisited(roomCoordinates.x + 1, roomCoordinates.y, out _))
+        if (IsRoomBuilt(roomCoordinates.x + 1, roomCoordinates.y, out _))
         {
             allowSouth = RoomGrid[roomCoordinates.x + 1][roomCoordinates.y].gameObject.GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled;
         }
         bool allowWest = false;
-        if (IsRoomVisited(roomCoordinates.x, roomCoordinates.y - 1, out _))
+        if (IsRoomBuilt(roomCoordinates.x, roomCoordinates.y - 1, out _))
         {
             allowWest = RoomGrid[roomCoordinates.x][roomCoordinates.y - 1].gameObject.GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled;
         }
         bool allowEast = false;
-        if (IsRoomVisited(roomCoordinates.x, roomCoordinates.y + 1, out _))
+        if (IsRoomBuilt(roomCoordinates.x, roomCoordinates.y + 1, out _))
         {
             allowEast = RoomGrid[roomCoordinates.x][roomCoordinates.y + 1].gameObject.GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled;
         }
@@ -224,19 +241,19 @@ public class LevelController : MonoBehaviour
         }
 
         // RNG still-closed doors of rooms not generated (if the adjacent room is generated and the door is still closed, it's already been decided that the door will be closed)
-        if (!allowNorth && !IsRoomVisited(roomCoordinates.x - 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
+        if (!allowNorth && !IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
         {
             allowNorth = Random.Range(0, 100) < openDoorChance;
         }
-        if (!allowSouth && !IsRoomVisited(roomCoordinates.x + 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
+        if (!allowSouth && !IsRoomBuilt(roomCoordinates.x + 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
         {
             allowSouth = Random.Range(0, 100) < openDoorChance;
         }
-        if (!allowWest && !IsRoomVisited(roomCoordinates.x, roomCoordinates.y - 1, out outOfBounds) && !outOfBounds)
+        if (!allowWest && !IsRoomBuilt(roomCoordinates.x, roomCoordinates.y - 1, out outOfBounds) && !outOfBounds)
         {
             allowWest = Random.Range(0, 100) < openDoorChance;
         }
-        if (!allowEast && !IsRoomVisited(roomCoordinates.x, roomCoordinates.y + 1, out outOfBounds) && !outOfBounds)
+        if (!allowEast && !IsRoomBuilt(roomCoordinates.x, roomCoordinates.y + 1, out outOfBounds) && !outOfBounds)
         {
             allowEast = Random.Range(0, 100) < openDoorChance;
         }
@@ -281,7 +298,7 @@ public class LevelController : MonoBehaviour
         RoomGrid[rowIndex][columnIndex].gameObject.GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled = doors.EastEnabled;
     }
 
-    private bool IsRoomVisited(int rowIndex, int columnIndex, out bool outOfBounds)
+    private bool IsRoomBuilt(int rowIndex, int columnIndex, out bool outOfBounds)
     {
         // We're outside the bounds of the level, therefore we haven't visited the room (technically)
         if (rowIndex < 0 || rowIndex >= LevelDimensions.x || columnIndex < 0 || columnIndex >= LevelDimensions.y)
@@ -294,6 +311,8 @@ public class LevelController : MonoBehaviour
         outOfBounds = false;
         return !(RoomGrid[rowIndex][columnIndex] is null);
     }
+    
+    #endregion
 
     public bool MoveToNewRoom(MoveDirection direction)
     {

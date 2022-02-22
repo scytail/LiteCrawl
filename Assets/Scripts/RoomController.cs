@@ -6,6 +6,8 @@ public class RoomController : MonoBehaviour
     [SerializeField]
     private RoomElementDataScriptableObject RoomElementData;
     [SerializeField]
+    private bool ShouldContainLadder;
+    [SerializeField]
     private Vector2Int NumberOfEnemies;
     [SerializeField]
     private Vector2Int NumberOfCupcakes;
@@ -23,6 +25,15 @@ public class RoomController : MonoBehaviour
 
         int numberOfEnemies = Random.Range(NumberOfEnemies.x, NumberOfEnemies.y + 1);
         GameObject spawnedInteractable;
+
+        if (ShouldContainLadder)
+        {
+            spawnedInteractable = Instantiate(RoomElementData.LadderPrefab);
+            spawnedInteractable.transform.parent = gameObject.transform;
+            spawnedInteractable.transform.localPosition = new Vector2(0, 1);
+            InteractableList.Add(spawnedInteractable);
+        }
+
         for (int enemyCounter = 0; enemyCounter < numberOfEnemies; enemyCounter++)
         {
             spawnedInteractable = Instantiate(RoomElementData.EnemyPrefab);
