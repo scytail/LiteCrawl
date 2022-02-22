@@ -5,4 +5,5 @@ public class RoomElementDataScriptableObject : ScriptableObject
 {
     public GameObject EnemyPrefab;
     public GameObject CupcakePrefab;
+    public GameObject LadderPrefab;
 }

@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnemyPrefab: {fileID: 5177129831798172877, guid: 944a70efb0cd78c48b5407e6cc9ed0a0, type: 3}
   CupcakePrefab: {fileID: 3283537913259152953, guid: 2287567976a85a44cbf100b118792a19, type: 3}
+  LadderPrefab: {fileID: 3283537913259152953, guid: ed363d7c939d209419745734d144fb74, type: 3}

@@ -29,8 +29,7 @@ public class GameController : MonoBehaviour
     #region Unity Events
     public void Awake()
     {
-        gameObject.GetComponent<LevelController>().GenerateRooms();
-        FocusCamera();
+        ResetLevel();
     }
     public void Left(InputAction.CallbackContext context)
     {
@@ -106,6 +105,13 @@ public class GameController : MonoBehaviour
         Destroy(target);
         SelectedTargetIndex = 0;
         MoveSelector();
+    }
+
+    public void ResetLevel()
+    {
+        gameObject.GetComponent<LevelController>().ClearRooms();
+        gameObject.GetComponent<LevelController>().GenerateRooms();
+        FocusCamera();
     }
 
     private void MoveSelector()

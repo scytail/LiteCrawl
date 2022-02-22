@@ -270,6 +270,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RoomElementData: {fileID: 11400000, guid: 1003603678355dc4893feca61d94f71c, type: 2}
+  ShouldContainLadder: 1
   NumberOfEnemies: {x: 0, y: 0}
   NumberOfCupcakes: {x: 0, y: 0}
   NorthDoor: {fileID: 4667996810115765823}
