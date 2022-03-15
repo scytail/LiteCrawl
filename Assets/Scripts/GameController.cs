@@ -140,9 +140,13 @@ public class GameController : MonoBehaviour
 
     private void FocusCamera()
     {
+        // Move the camera
         Camera.transform.position = new Vector3(LevelController.CurrentRoom.transform.position.x,
                                                 LevelController.CurrentRoom.transform.position.y,
                                                 Camera.transform.position.z);
+        // Reveal the room on the minimap
+        LevelController.CurrentRoom.GetComponent<RoomController>().SetMinimapVisibility(true);
+        // Set the selector
         ResetSelector();
     }
 

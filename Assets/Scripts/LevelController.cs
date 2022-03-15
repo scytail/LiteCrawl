@@ -124,7 +124,7 @@ public class LevelController : MonoBehaviour
         }
         
         // Generate the physical room and place it onto the level
-        PlaceRoom(roomCoordinates.x, roomCoordinates.y, roomType, roomDoorData);
+        BuildRoom(roomCoordinates.x, roomCoordinates.y, roomType, roomDoorData);
 
         // For each child room, recursively call this method until we no longer have children to visit (either no more doors OR the child room has already been "visited")
         foreach (Vector2Int childRoomCoordinates in childRooms)
@@ -261,7 +261,7 @@ public class LevelController : MonoBehaviour
         return new RoomDoorData(allowNorth, allowSouth, allowWest, allowEast);
     }
 
-    private void PlaceRoom(int rowIndex, int columnIndex, RoomType roomType, RoomDoorData doors)
+    private void BuildRoom(int rowIndex, int columnIndex, RoomType roomType, RoomDoorData doors)
     {
         GameObject roomPrefab;
 
@@ -292,10 +292,26 @@ public class LevelController : MonoBehaviour
         // Generate the room and place it
         RoomGrid[rowIndex][columnIndex] = Instantiate(roomPrefab);
         RoomGrid[rowIndex][columnIndex].transform.position = new Vector2(columnIndex * 10, rowIndex * -10);
-        RoomGrid[rowIndex][columnIndex].gameObject.GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled = doors.NorthEnabled;
-        RoomGrid[rowIndex][columnIndex].gameObject.GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled = doors.SouthEnabled;
-        RoomGrid[rowIndex][columnIndex].gameObject.GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled = doors.WestEnabled;
-        RoomGrid[rowIndex][columnIndex].gameObject.GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled = doors.EastEnabled;
+        RoomController roomController = RoomGrid[rowIndex][columnIndex].gameObject.GetComponent<RoomController>();
+        foreach (Renderer renderer in roomController.NorthDoor.GetComponentsInChildren<Renderer>())
+        {
+            renderer.enabled = doors.NorthEnabled;
+        }
+        foreach (Renderer renderer in roomController.SouthDoor.GetComponentsInChildren<Renderer>())
+        {
+            renderer.enabled = doors.SouthEnabled;
+        }
+        foreach (Renderer renderer in roomController.WestDoor.GetComponentsInChildren<Renderer>())
+        {
+            renderer.enabled = doors.WestEnabled;
+        }
+        foreach (Renderer renderer in roomController.EastDoor.GetComponentsInChildren<Renderer>())
+        {
+            renderer.enabled = doors.EastEnabled;
+        }
+
+        // Hide it on the minimap by default
+        roomController.SetMinimapVisibility(false);
     }
 
     private bool IsRoomBuilt(int rowIndex, int columnIndex, out bool outOfBounds)

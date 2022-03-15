@@ -11,6 +11,8 @@ public class RoomController : MonoBehaviour
     private Vector2Int NumberOfEnemies;
     [SerializeField]
     private Vector2Int NumberOfCupcakes;
+    [SerializeField]
+    private List<GameObject> minimapObjects;
     public GameObject NorthDoor;
     public GameObject SouthDoor;
     public GameObject WestDoor;
@@ -49,6 +51,26 @@ public class RoomController : MonoBehaviour
             spawnedInteractable.transform.parent = gameObject.transform;
             spawnedInteractable.transform.localPosition = new Vector2(3, -1 + cupcakeCounter * 1.5f);
             InteractableList.Add(spawnedInteractable);
+        }
+    }
+
+    public void SetMinimapVisibility(bool visible)
+    {
+        foreach(GameObject minimapObject in minimapObjects)
+        {
+            if (visible)
+            {
+                // If we're showing it, we need to ensure it's not something that's been hidden through its parent for another reason (like a door)
+                if (minimapObject.transform.parent.gameObject.GetComponent<Renderer>().enabled)
+                {
+                    minimapObject.GetComponent<Renderer>().enabled = visible;
+                }
+            }
+            else
+            {
+                // If we're hiding it, we don't really care what the parent is set to.
+                minimapObject.GetComponent<Renderer>().enabled = visible;
+            }
         }
     }
 }
