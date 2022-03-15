@@ -309,6 +309,9 @@ public class LevelController : MonoBehaviour
         {
             renderer.enabled = doors.EastEnabled;
         }
+
+        // Hide it on the minimap by default
+        roomController.SetMinimapVisibility(false);
     }
 
     private bool IsRoomBuilt(int rowIndex, int columnIndex, out bool outOfBounds)

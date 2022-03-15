@@ -106,6 +106,12 @@ MonoBehaviour:
   ShouldContainLadder: 0
   NumberOfEnemies: {x: 1, y: 3}
   NumberOfCupcakes: {x: 0, y: 1}
+  minimapObjects:
+  - {fileID: 356588366783366580}
+  - {fileID: 8867125024759451788}
+  - {fileID: 1591610082063636131}
+  - {fileID: 4348573019708130565}
+  - {fileID: 7223188839534749006}
   NorthDoor: {fileID: 3232597746197464}
   SouthDoor: {fileID: 7472819453789321250}
   WestDoor: {fileID: 10882715802658843}
@@ -327,6 +333,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fd1526f31d5bb204eba1a4da42ee8f97, type: 3}
+--- !u!1 &356588366783366580 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4718096906795516447, guid: fd1526f31d5bb204eba1a4da42ee8f97, type: 3}
+  m_PrefabInstance: {fileID: 5010491089237460907}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4296866628081626957 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9090901191814768870, guid: fd1526f31d5bb204eba1a4da42ee8f97, type: 3}
