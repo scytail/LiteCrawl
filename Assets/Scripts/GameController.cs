@@ -119,16 +119,16 @@ public class GameController : MonoBehaviour
         List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
         if (roomInteractableList.Count > 0)
         {
-            if (!Selector.gameObject.GetComponent<Renderer>().enabled)
+            if (!Selector.GetComponent<Renderer>().enabled)
             {
-                Selector.gameObject.GetComponent<Renderer>().enabled = true;
+                Selector.GetComponent<Renderer>().enabled = true;
             }
             Transform targetTransform = roomInteractableList[SelectedTargetIndex].transform;
-            Selector.transform.position = new Vector2(targetTransform.position.x, targetTransform.position.y + 2);
+            Selector.transform.position = new Vector2(targetTransform.position.x, targetTransform.position.y + 1);
         }
         else
         {
-            Selector.gameObject.GetComponent<Renderer>().enabled = false;
+            Selector.GetComponent<Renderer>().enabled = false;
         }
     }
 
@@ -155,7 +155,7 @@ public class GameController : MonoBehaviour
         List<GameObject> roomInteractableList = LevelController.CurrentRoom.GetComponent<RoomController>().InteractableList;
         foreach (GameObject interactable in roomInteractableList)
         {
-            if (interactable.tag == "Enemy")
+            if (interactable.CompareTag("Enemy"))
             {
                 List<GameObject> enemyTargets = interactable.GetComponent<EnemyController>().DetermineTargets(Player, roomInteractableList);
                 interactable.GetComponent<CreatureController>().Interact(enemyTargets);
