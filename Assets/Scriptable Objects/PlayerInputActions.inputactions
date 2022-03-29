@@ -107,8 +107,8 @@
                 },
                 {
                     "name": "",
-                    "id": "85a68525-5b78-427f-8f90-2b955dbad29c",
-                    "path": "<Keyboard>/upArrow",
+                    "id": "028b6c82-6707-4b64-b586-6a944371d9d1",
+                    "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -124,6 +124,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Select",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f0094184-f903-459a-8cc7-be73d0dcddc2",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Down",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -146,6 +157,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Change Target",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "85a68525-5b78-427f-8f90-2b955dbad29c",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Up",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
