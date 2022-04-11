@@ -97,6 +97,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05c13ac99c1fd614ebdefaa22eab44e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pointValue: 1
   CurrentHealth: 2
   MaxHealth: 2
   BaseDamage: 1
