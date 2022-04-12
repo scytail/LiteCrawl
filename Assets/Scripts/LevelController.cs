@@ -23,6 +23,8 @@ public class LevelController : MonoBehaviour
     [SerializeField]
     private RoomDataScriptableObject RoomData;
     [SerializeField]
+    private string LevelSeedString;
+    [SerializeField]
     private Vector2Int LevelDimensions;
     [SerializeField]
     [Range(0,100)]
@@ -38,15 +40,57 @@ public class LevelController : MonoBehaviour
             return RoomGrid[CurrentLocation.x][CurrentLocation.y];
         }
     }
+    
+    private GameObject _gameController;
+    protected GameObject GameManager
+    {
+        get
+        {
+            if (!_gameController)
+            {
+                _gameController = GameObject.FindGameObjectWithTag("GameController");
+            }
+
+            return _gameController;
+        }
+    }
 
     #region Room Generation
-    
+
     public void GenerateRooms()
     {
+        Seed levelSeed = null;
+        bool usingPresetSeed = false;
+
+        if (LevelSeedString is not null && LevelSeedString != string.Empty)
+        {
+            // We've provided the generator with a seed, so we will ignore all other generator data so that we can force the generator down a specific path
+            levelSeed = new Seed(LevelSeedString);
+            usingPresetSeed = true;
+        }
+        else
+        {
+            // No seed was provided, so we'll build one ourselves (for diagnostics and such)
+            levelSeed = new Seed();
+        }
+
+        // Validate level dimensions
+        if (usingPresetSeed)
+        {
+            // Override the unity-set data
+            LevelDimensions = levelSeed.LevelDimensions;
+        }
+        else
+        {
+            // Log the dimensions for the seed generation
+            levelSeed.LevelDimensions = LevelDimensions;
+        }
         if (LevelDimensions.x < 2 || LevelDimensions.y < 2)
         {
             throw new System.ArgumentException("Level Dimensions must be at least 2x2", "LevelDimensions");
         }
+
+        gameObject.GetComponent<GameController>().DebugLog($"Room generation has begun. Maximum rows: [{LevelDimensions.x}] Maximum columns: [{LevelDimensions.y}]");
 
         // New up a blank room grid (we'll need this so that our recursive function can keep track of rooms already generated)
         RoomGrid = new List<List<GameObject>>();
@@ -60,15 +104,42 @@ public class LevelController : MonoBehaviour
             }
         }
 
-        // Pick start room (this is the tree root)
-        Vector2Int startRoomCoordinates = GeneratePOICoordinates(new List<Vector2Int> { });
+        // Set up the points of interest
+        Vector2Int startRoomCoordinates;
+        Dictionary<Vector2Int, RoomType> pointsOfInterest;
+        if (usingPresetSeed)
+        {
+            // Get the points of interest from the seed
+            pointsOfInterest = levelSeed.PointsOfInterest;
+            
+            // Find the start room coordinates since we explicitly need those
+            foreach (KeyValuePair<Vector2Int, RoomType> room in pointsOfInterest)
+            {
+                if (room.Value == RoomType.StartRoom)
+                {
+                    startRoomCoordinates = room.Key;
+                    break;
+                }
+            }
 
-        // pick any points of interest that we MUST path to (like the descent room)
-        Dictionary<Vector2Int, RoomType> pointsOfInterest = new Dictionary<Vector2Int, RoomType>();
-        pointsOfInterest.Add(startRoomCoordinates, RoomType.StartRoom);
-        pointsOfInterest.Add(GeneratePOICoordinates(new List<Vector2Int> { startRoomCoordinates }), RoomType.DescentRoom);
+            // Shouldn't ever get here, so we'll throw an error if we do
+            throw new System.ArgumentNullException("Level controller couldn't find the start room from the provided seed.");
+        }
+        else
+        {
+            // Pick start room (this is the tree root)
+            startRoomCoordinates = GeneratePOICoordinates(new List<Vector2Int> { });
+        
+            // pick any points of interest that we MUST path to (like the descent room)
+            pointsOfInterest = new Dictionary<Vector2Int, RoomType>();
+            pointsOfInterest.Add(startRoomCoordinates, RoomType.StartRoom);
+            pointsOfInterest.Add(GeneratePOICoordinates(new List<Vector2Int> { startRoomCoordinates }), RoomType.DescentRoom);
+        }
 
         // Recursively build the dungeon like a depth-first graph, with the root being the start room.
+
+        // TODO: force doors open/shut exactly as they are from a dataset (base16 encoded binary string?)
+        // these should probably be "one-way" (i.e. only hard-set the doors we actually changed) so that we can utilize (and therefore debug) as much existing code as possible.
         GenerateRoom(startRoomCoordinates, pointsOfInterest);
     }
 

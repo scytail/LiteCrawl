@@ -1065,6 +1065,7 @@ MonoBehaviour:
   Camera: {fileID: 519420028}
   Player: {fileID: 1539833840}
   Selector: {fileID: 720119515}
+  DisableLogging: 1
 --- !u!114 &2093729439
 MonoBehaviour:
   m_ObjectHideFlags: 0
