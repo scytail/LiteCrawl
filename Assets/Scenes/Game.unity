@@ -1065,7 +1065,7 @@ MonoBehaviour:
   Camera: {fileID: 519420028}
   Player: {fileID: 1539833840}
   Selector: {fileID: 720119515}
-  DisableLogging: 1
+  DebugMode: 1
 --- !u!114 &2093729439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1205,6 +1205,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RoomData: {fileID: 11400000, guid: da5038c4ca23a4d4ea21eee5f9703979, type: 2}
+  LevelSeedString: 
   LevelDimensions: {x: 6, y: 6}
   openDoorChance: 60
 --- !u!1001 &9167530697498633460
