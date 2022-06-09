@@ -263,24 +263,24 @@ public class LevelController : MonoBehaviour
 
         // Set doors as what the adjacent room's matching door is set to, or closed if the room doesn't exist
         bool allowNorth = false;
+        bool allowSouth = false;
+        bool allowWest = false;
+        bool allowEast = false;
         if (IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out _))
         {
-            allowNorth = RoomGrid[roomCoordinates.x - 1][roomCoordinates.y].gameObject.GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled;
+            allowNorth = RoomGrid[roomCoordinates.x - 1][roomCoordinates.y].GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled;
         }
-        bool allowSouth = false;
         if (IsRoomBuilt(roomCoordinates.x + 1, roomCoordinates.y, out _))
         {
-            allowSouth = RoomGrid[roomCoordinates.x + 1][roomCoordinates.y].gameObject.GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled;
+            allowSouth = RoomGrid[roomCoordinates.x + 1][roomCoordinates.y].GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled;
         }
-        bool allowWest = false;
         if (IsRoomBuilt(roomCoordinates.x, roomCoordinates.y - 1, out _))
         {
-            allowWest = RoomGrid[roomCoordinates.x][roomCoordinates.y - 1].gameObject.GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled;
+            allowWest = RoomGrid[roomCoordinates.x][roomCoordinates.y - 1].GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled;
         }
-        bool allowEast = false;
         if (IsRoomBuilt(roomCoordinates.x, roomCoordinates.y + 1, out _))
         {
-            allowEast = RoomGrid[roomCoordinates.x][roomCoordinates.y + 1].gameObject.GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled;
+            allowEast = RoomGrid[roomCoordinates.x][roomCoordinates.y + 1].GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled;
         }
 
         // Force open doors that are potentially on the path to any points of interest (assuming we haven't already found a path to the PoI)
@@ -480,17 +480,17 @@ public class LevelController : MonoBehaviour
         roomController.SetMinimapVisibility(false);
     }
 
-    private bool IsRoomBuilt(int rowIndex, int columnIndex, out bool outOfBounds)
+    private bool IsRoomBuilt(int rowIndex, int columnIndex, out bool isOutOfBounds)
     {
         // We're outside the bounds of the level, therefore we haven't visited the room (technically)
         if (rowIndex < 0 || rowIndex >= LevelDimensions.x || columnIndex < 0 || columnIndex >= LevelDimensions.y)
         {
-            outOfBounds = true;
+            isOutOfBounds = true;
             return false;
         }
 
         // If the room isn't null, we've visited it
-        outOfBounds = false;
+        isOutOfBounds = false;
         return !(RoomGrid[rowIndex][columnIndex] is null);
     }
     
