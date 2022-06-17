@@ -6,6 +6,7 @@ public class Seed
 {
     public Vector2Int LevelDimensions;
     public Dictionary<Vector2Int, RoomType> RoomTypeList;
+    public Dictionary<Vector2Int, bool> poiPrioritizeVerticalFirstList;
     public Dictionary<Vector2Int, RoomDoorData> RoomDoorDataList;
     public Dictionary<Vector2Int, RoomType> PointsOfInterest;
 
@@ -21,7 +22,7 @@ public class Seed
     
     public override string ToString()
     {
-        // maxRows|maxCols;roomRowCoord,roomColCoord,roomType,roomDoorData|[moreRoomData];poiRow|poiColumn|poiRoomType;[more POIs];
+        // maxRows|maxCols;roomRowCoord,roomColCoord,roomType,poiPrioritizeVerticalFirst,roomDoorData|[moreRoomData];poiRow|poiColumn|poiRoomType;[more POIs];
 
         // build level dimensions
         string seedString = $"{LevelDimensions.x}|{LevelDimensions.y};";
@@ -30,7 +31,7 @@ public class Seed
         List<string> roomDataStrings = new();
         foreach (KeyValuePair<Vector2Int, RoomType> roomTypeData in RoomTypeList)
         {
-            roomDataStrings.Add($"{roomTypeData.Key.x},{roomTypeData.Key.y},{roomTypeData.Value},{RoomDoorDataList[roomTypeData.Key]}");
+            roomDataStrings.Add($"{roomTypeData.Key.x},{roomTypeData.Key.y},{roomTypeData.Value},{poiPrioritizeVerticalFirstList[roomTypeData.Key]},{RoomDoorDataList[roomTypeData.Key]}");
         }
         seedString += $"{string.Join('|', roomDataStrings)};";
 
@@ -46,6 +47,7 @@ public class Seed
     private void init()
     {
         RoomTypeList = new();
+        poiPrioritizeVerticalFirstList = new();
         RoomDoorDataList = new();
         PointsOfInterest = new();
     }
@@ -104,7 +106,7 @@ public class Seed
         {
             string[] splitRoomData = roomDataString.Split(',');
 
-            if (splitRoomData.Length != 4)
+            if (splitRoomData.Length != 5)
             {
                 throw new System.ArgumentException($"Room data does not contain the proper amount of information. Room data found: [{roomDataString}]");
             }
@@ -122,12 +124,17 @@ public class Seed
             {
                 throw new System.ArgumentException($"Room type was not valid. Value found: [{splitRoomData[2]}]");
             }
-            if (!RoomDoorData.TryParse(splitRoomData[3], out RoomDoorData doorData))
+            if (!bool.TryParse(splitRoomData[3], out bool poiPrioritizeVerticalTraversal))
             {
-                throw new System.ArgumentException($"Room door data was not valid. Value found: [{splitRoomData[3]}]");
+                throw new System.ArgumentException($"Room poi directional traversal setting was not valid. Value found: [{splitRoomData[3]}]");
+            }
+            if (!RoomDoorData.TryParse(splitRoomData[4], out RoomDoorData doorData))
+            {
+                throw new System.ArgumentException($"Room door data was not valid. Value found: [{splitRoomData[4]}]");
             }
 
             Vector2Int roomCoords = new(roomRowCoord, roomColumnCoord);
+            poiPrioritizeVerticalFirstList.Add(roomCoords, poiPrioritizeVerticalTraversal);
             RoomTypeList.Add(roomCoords, roomType);
             RoomDoorDataList.Add(roomCoords, doorData);
         }

@@ -253,14 +253,7 @@ public class LevelController : MonoBehaviour
     private RoomDoorData GenerateDoorData(Vector2Int roomCoordinates, Dictionary<Vector2Int, RoomType> pointsOfInterest, bool useSeed, out List<Vector2Int> childRoomCoordsList)
     {
         childRoomCoordsList = new List<Vector2Int>();
-        if (useSeed)
-        {
-            // FIXME: this doesn't accurately follow the path... redo?
-            // TODO: add the child rooms for traversal
-
-            return LevelSeed.RoomDoorDataList[roomCoordinates];
-        }
-
+        
         // Set doors as what the adjacent room's matching door is set to, or closed if the room doesn't exist
         bool allowNorth = false;
         bool allowSouth = false;
@@ -286,8 +279,16 @@ public class LevelController : MonoBehaviour
         // Force open doors that are potentially on the path to any points of interest (assuming we haven't already found a path to the PoI)
         // NOTE: This isn't forcing open doors on the other side for rooms already made. May need to remedy that.
         // NOTE: This process forces the recursive traversal system to follow the child paths first (by adding them to the child list first)
-        bool outOfBounds;
-        bool goVertical = Random.Range(0, 2) == 1;
+        bool goVertical;
+        if (useSeed)
+        {
+            goVertical = LevelSeed.poiPrioritizeVerticalFirstList[roomCoordinates];
+        }
+        else
+        {
+            goVertical = Random.Range(0, 2) == 1;
+            LevelSeed.poiPrioritizeVerticalFirstList.Add(roomCoordinates, goVertical);
+        }
         Vector2Int childRoomCoords;
         foreach (Vector2Int pointOfInterest in pointsOfInterest.Keys)
         {
@@ -383,21 +384,49 @@ public class LevelController : MonoBehaviour
         }
 
         // RNG still-closed doors of rooms not generated (if the adjacent room is generated and the door is still closed, it's already been decided that the door will be closed)
-        if (!allowNorth && !IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
+        if (!allowNorth && !IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out bool outOfBounds) && !outOfBounds)
         {
-            allowNorth = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowNorth = LevelSeed.RoomDoorDataList[roomCoordinates].NorthEnabled;
+            }
+            else
+            {
+                allowNorth = Random.Range(0, 100) < openDoorChance;
+            }
         }
         if (!allowSouth && !IsRoomBuilt(roomCoordinates.x + 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
         {
-            allowSouth = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowSouth = LevelSeed.RoomDoorDataList[roomCoordinates].SouthEnabled;
+            }
+            else
+            {
+                allowSouth = Random.Range(0, 100) < openDoorChance;
+            }
         }
         if (!allowWest && !IsRoomBuilt(roomCoordinates.x, roomCoordinates.y - 1, out outOfBounds) && !outOfBounds)
         {
-            allowWest = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowWest = LevelSeed.RoomDoorDataList[roomCoordinates].WestEnabled;
+            }
+            else
+            {
+                allowWest = Random.Range(0, 100) < openDoorChance;
+            }
         }
         if (!allowEast && !IsRoomBuilt(roomCoordinates.x, roomCoordinates.y + 1, out outOfBounds) && !outOfBounds)
         {
-            allowEast = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowEast = LevelSeed.RoomDoorDataList[roomCoordinates].EastEnabled;
+            }
+            else
+            {
+                allowEast = Random.Range(0, 100) < openDoorChance;
+            }
         }
 
         // Add other child rooms based on the doors we've opened
