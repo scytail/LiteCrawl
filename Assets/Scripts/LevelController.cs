@@ -23,14 +23,12 @@ public class LevelController : MonoBehaviour
     [SerializeField]
     private RoomDataScriptableObject RoomData;
     [SerializeField]
+    private string LevelSeedString;
+    [SerializeField]
     private Vector2Int LevelDimensions;
     [SerializeField]
     [Range(0,100)]
     private int openDoorChance;
-
-    private List<List<GameObject>> RoomGrid;
-    [System.NonSerialized]
-    public Vector2Int CurrentLocation;
     public GameObject CurrentRoom
     {
         get
@@ -39,37 +37,73 @@ public class LevelController : MonoBehaviour
         }
     }
 
-    #region Room Generation
+    private List<List<GameObject>> RoomGrid;
+    [System.NonSerialized]
+    public Vector2Int CurrentLocation;
     
+    private GameObject _gameController;
+    protected GameObject GameManager
+    {
+        get
+        {
+            if (!_gameController)
+            {
+                _gameController = GameObject.FindGameObjectWithTag("GameController");
+            }
+
+            return _gameController;
+        }
+    }
+    private Seed LevelSeed;
+
+    #region Room Generation
+
     public void GenerateRooms()
     {
+        if (LevelSeedString is not null && LevelSeedString != string.Empty)
+        {
+            // We've provided the generator with a seed, so we will ignore all other generator data so that we can force the generator down a specific path
+            LevelSeed = new Seed(LevelSeedString);
+            GenerateRoomsFromSeed();
+            return;
+        }
+
+        // No seed was provided, so we'll build one ourselves (for diagnostics and such)
+        LevelSeed = new Seed();
+
+        // Log the dimensions for the seed generation
+        LevelSeed.LevelDimensions = LevelDimensions;
+
+        // Validate level dimensions
         if (LevelDimensions.x < 2 || LevelDimensions.y < 2)
         {
             throw new System.ArgumentException("Level Dimensions must be at least 2x2", "LevelDimensions");
         }
 
+        gameObject.GetComponent<GameController>().DebugLog($"Room generation has begun. Maximum rows: [{LevelDimensions.x}] Maximum columns: [{LevelDimensions.y}]");
+
         // New up a blank room grid (we'll need this so that our recursive function can keep track of rooms already generated)
-        RoomGrid = new List<List<GameObject>>();
+        RoomGrid = BuildEmptyRoomGrid(LevelDimensions.x, LevelDimensions.y);
 
-        for (int rowIndex = 0; rowIndex < LevelDimensions.x; rowIndex++)
-        {
-            RoomGrid.Add(new List<GameObject>());
-            for (int columnIndex = 0; columnIndex < LevelDimensions.y; columnIndex++)
-            {
-                RoomGrid[rowIndex].Add(null);
-            }
-        }
-
+        // Set up the points of interest
+        Vector2Int startRoomCoordinates;
+        Dictionary<Vector2Int, RoomType> pointsOfInterest;
+        
         // Pick start room (this is the tree root)
-        Vector2Int startRoomCoordinates = GeneratePOICoordinates(new List<Vector2Int> { });
-
+        startRoomCoordinates = GeneratePOICoordinates(new List<Vector2Int> { });
+        
         // pick any points of interest that we MUST path to (like the descent room)
-        Dictionary<Vector2Int, RoomType> pointsOfInterest = new Dictionary<Vector2Int, RoomType>();
+        pointsOfInterest = new Dictionary<Vector2Int, RoomType>();
         pointsOfInterest.Add(startRoomCoordinates, RoomType.StartRoom);
         pointsOfInterest.Add(GeneratePOICoordinates(new List<Vector2Int> { startRoomCoordinates }), RoomType.DescentRoom);
 
+        // Set the seed data for the POIs
+        LevelSeed.PointsOfInterest = pointsOfInterest;
+
         // Recursively build the dungeon like a depth-first graph, with the root being the start room.
-        GenerateRoom(startRoomCoordinates, pointsOfInterest);
+        GenerateRoom(startRoomCoordinates, pointsOfInterest, false);
+
+        gameObject.GetComponent<GameController>().DebugLog($"Room generation has been completed. Seed: {LevelSeed}");
     }
 
     public void ClearRooms()
@@ -87,6 +121,68 @@ public class LevelController : MonoBehaviour
         }
     }
 
+    private void GenerateRoomsFromSeed()
+    {
+        gameObject.GetComponent<GameController>().DebugLog($"Building pre-generated world from seed.");
+
+        // Override the unity-set data
+        LevelDimensions = LevelSeed.LevelDimensions;
+
+        // Validate level dimensions
+        if (LevelDimensions.x < 2 || LevelDimensions.y < 2)
+        {
+            throw new System.ArgumentException("Level Dimensions must be at least 2x2", "LevelDimensions");
+        }
+
+        gameObject.GetComponent<GameController>().DebugLog($"Room generation has begun. Maximum rows: [{LevelDimensions.x}] Maximum columns: [{LevelDimensions.y}]");
+
+        // New up a blank room grid (we'll need this so that our recursive function can keep track of rooms already generated)
+        RoomGrid = BuildEmptyRoomGrid(LevelDimensions.x, LevelDimensions.y);
+
+        // Set up the points of interest
+        Vector2Int startRoomCoordinates = new();
+        bool startRoomCoordsFound = false;
+        Dictionary<Vector2Int, RoomType> pointsOfInterest;
+        
+        // Get the points of interest from the seed
+        pointsOfInterest = LevelSeed.PointsOfInterest;
+
+        // Find the start room coordinates since we explicitly need those
+        foreach (KeyValuePair<Vector2Int, RoomType> room in pointsOfInterest)
+        {
+            if (room.Value == RoomType.StartRoom)
+            {
+                startRoomCoordinates = room.Key;
+                startRoomCoordsFound = true;
+                break;
+            }
+        }
+
+        if (!startRoomCoordsFound)
+        {
+            throw new System.ArgumentNullException("Level controller couldn't find the start room from the provided seed.");
+        }
+
+        // Recursively build the dungeon like a depth-first graph, with the root being the start room.
+        GenerateRoom(startRoomCoordinates, pointsOfInterest, true);
+    }
+
+    private List<List<GameObject>> BuildEmptyRoomGrid(int numRows, int numColumns)
+    {
+        List<List<GameObject>> roomGrid = new List<List<GameObject>>();
+
+        for (int rowIndex = 0; rowIndex < numRows; rowIndex++)
+        {
+            roomGrid.Add(new List<GameObject>());
+            for (int columnIndex = 0; columnIndex < numColumns; columnIndex++)
+            {
+                roomGrid[rowIndex].Add(null);
+            }
+        }
+
+        return roomGrid;
+    }
+
     private Vector2Int GeneratePOICoordinates(List<Vector2Int> existingPointsOfInterest)
     {
         // Calculate the new point of interest (And make sure it's not the same as a previous point of interest)
@@ -98,108 +194,125 @@ public class LevelController : MonoBehaviour
         return pointOfInterest;
     }
 
-    private void GenerateRoom(Vector2Int roomCoordinates, Dictionary<Vector2Int, RoomType> pointsOfInterest)
+    private void GenerateRoom(Vector2Int roomCoordinates, Dictionary<Vector2Int, RoomType> pointsOfInterest, bool useSeed)
     {
-        RoomType roomType = GenerateRoomType(roomCoordinates, pointsOfInterest);
+        RoomType roomType = GenerateRoomType(roomCoordinates, pointsOfInterest, useSeed);
 
-        RoomDoorData roomDoorData = GenerateDoorData(roomCoordinates, pointsOfInterest);
+        RoomDoorData roomDoorData = GenerateDoorData(roomCoordinates, pointsOfInterest, useSeed, out List<Vector2Int> childRoomCoordsList);
 
-        // Find the child rooms based on the doors we've opened
-        List<Vector2Int> childRooms = new List<Vector2Int>();
-        if (roomDoorData.NorthEnabled)
+        // log the data if we aren't using a seed
+        if (!useSeed)
         {
-            childRooms.Add(new Vector2Int(roomCoordinates.x - 1, roomCoordinates.y));
-        }
-        if (roomDoorData.SouthEnabled)
-        {
-            childRooms.Add(new Vector2Int(roomCoordinates.x + 1, roomCoordinates.y));
-        }
-        if (roomDoorData.WestEnabled)
-        {
-            childRooms.Add(new Vector2Int(roomCoordinates.x, roomCoordinates.y - 1));
-        }
-        if (roomDoorData.EastEnabled)
-        {
-            childRooms.Add(new Vector2Int(roomCoordinates.x, roomCoordinates.y + 1));
+            LevelSeed.RoomTypeList.Add(roomCoordinates, roomType);
+            LevelSeed.RoomDoorDataList.Add(roomCoordinates, roomDoorData);
         }
         
         // Generate the physical room and place it onto the level
         BuildRoom(roomCoordinates.x, roomCoordinates.y, roomType, roomDoorData);
 
         // For each child room, recursively call this method until we no longer have children to visit (either no more doors OR the child room has already been "visited")
-        foreach (Vector2Int childRoomCoordinates in childRooms)
+        foreach (Vector2Int childRoomCoordinates in childRoomCoordsList)
         {
             if (RoomGrid[childRoomCoordinates.x][childRoomCoordinates.y] is null)
             {
-                GenerateRoom(childRoomCoordinates, pointsOfInterest);
+                GenerateRoom(childRoomCoordinates, pointsOfInterest, useSeed);
             }
         }
     }
 
-    private RoomType GenerateRoomType(Vector2Int roomCoordinates, Dictionary<Vector2Int, RoomType> pointsOfInterest)
+    private RoomType GenerateRoomType(Vector2Int roomCoordinates, Dictionary<Vector2Int, RoomType> pointsOfInterest, bool useSeed)
     {
-        // Pick room type
         RoomType roomType;
         if (!pointsOfInterest.TryGetValue(roomCoordinates, out roomType))
         {
             // roomType was not in the points of interest, randomly pick the room type
-            switch (Random.Range(0, 3))
+            if (useSeed)
             {
-                case 1:
-                    roomType = RoomType.FoodRoom;
-                    break;
-                case 2:
-                    roomType = RoomType.EmptyRoom;
-                    break;
-                default:
-                    roomType = RoomType.BasicRoom;
-                    break;
+                roomType = LevelSeed.RoomTypeList[roomCoordinates];
+            }
+            else
+            {
+                switch (Random.Range(0, 3))
+                {
+                    case 1:
+                        roomType = RoomType.FoodRoom;
+                        break;
+                    case 2:
+                        roomType = RoomType.EmptyRoom;
+                        break;
+                    default:
+                        roomType = RoomType.BasicRoom;
+                        break;
+                }
             }
         }
 
         return roomType;
     }
 
-    private RoomDoorData GenerateDoorData(Vector2Int roomCoordinates, Dictionary<Vector2Int, RoomType> pointsOfInterest)
+    private RoomDoorData GenerateDoorData(Vector2Int roomCoordinates, Dictionary<Vector2Int, RoomType> pointsOfInterest, bool useSeed, out List<Vector2Int> childRoomCoordsList)
     {
+        childRoomCoordsList = new List<Vector2Int>();
+        
         // Set doors as what the adjacent room's matching door is set to, or closed if the room doesn't exist
         bool allowNorth = false;
+        bool allowSouth = false;
+        bool allowWest = false;
+        bool allowEast = false;
         if (IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out _))
         {
-            allowNorth = RoomGrid[roomCoordinates.x - 1][roomCoordinates.y].gameObject.GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled;
+            allowNorth = RoomGrid[roomCoordinates.x - 1][roomCoordinates.y].GetComponent<RoomController>().SouthDoor.GetComponent<Renderer>().enabled;
         }
-        bool allowSouth = false;
         if (IsRoomBuilt(roomCoordinates.x + 1, roomCoordinates.y, out _))
         {
-            allowSouth = RoomGrid[roomCoordinates.x + 1][roomCoordinates.y].gameObject.GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled;
+            allowSouth = RoomGrid[roomCoordinates.x + 1][roomCoordinates.y].GetComponent<RoomController>().NorthDoor.GetComponent<Renderer>().enabled;
         }
-        bool allowWest = false;
         if (IsRoomBuilt(roomCoordinates.x, roomCoordinates.y - 1, out _))
         {
-            allowWest = RoomGrid[roomCoordinates.x][roomCoordinates.y - 1].gameObject.GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled;
+            allowWest = RoomGrid[roomCoordinates.x][roomCoordinates.y - 1].GetComponent<RoomController>().EastDoor.GetComponent<Renderer>().enabled;
         }
-        bool allowEast = false;
         if (IsRoomBuilt(roomCoordinates.x, roomCoordinates.y + 1, out _))
         {
-            allowEast = RoomGrid[roomCoordinates.x][roomCoordinates.y + 1].gameObject.GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled;
+            allowEast = RoomGrid[roomCoordinates.x][roomCoordinates.y + 1].GetComponent<RoomController>().WestDoor.GetComponent<Renderer>().enabled;
         }
 
-        // Force open doors that are on the path to any points of interest (assuming we haven't already found a path to the PoI)
-        bool outOfBounds;
-        bool goHorizontal = Random.Range(0, 2) == 1;  // false = verticcal, true = horizontal
+        // Force open doors that are potentially on the path to any points of interest (assuming we haven't already found a path to the PoI)
+        // NOTE: This isn't forcing open doors on the other side for rooms already made. May need to remedy that.
+        // NOTE: This process forces the recursive traversal system to follow the child paths first (by adding them to the child list first)
+        bool goVertical;
+        if (useSeed)
+        {
+            goVertical = LevelSeed.poiPrioritizeVerticalFirstList[roomCoordinates];
+        }
+        else
+        {
+            goVertical = Random.Range(0, 2) == 1;
+            LevelSeed.poiPrioritizeVerticalFirstList.Add(roomCoordinates, goVertical);
+        }
+        Vector2Int childRoomCoords;
         foreach (Vector2Int pointOfInterest in pointsOfInterest.Keys)
         {
             if (RoomGrid[pointOfInterest.x][pointOfInterest.y] is null && pointOfInterest != roomCoordinates)
             {
-                if (goHorizontal)
+                if (goVertical)
                 {
                     if (pointOfInterest.x < roomCoordinates.x)
                     {
                         allowNorth = true;
+                        childRoomCoords = new Vector2Int(roomCoordinates.x - 1, roomCoordinates.y);
+                        if (!childRoomCoordsList.Contains(childRoomCoords))
+                        {
+                            childRoomCoordsList.Add(childRoomCoords);
+                        }
                     }
                     else if (pointOfInterest.x > roomCoordinates.x)
                     {
                         allowSouth = true;
+                        childRoomCoords = new Vector2Int(roomCoordinates.x + 1, roomCoordinates.y);
+                        if (!childRoomCoordsList.Contains(childRoomCoords))
+                        {
+                            childRoomCoordsList.Add(childRoomCoords);
+                        }
                     }
                     else
                     {
@@ -207,22 +320,42 @@ public class LevelController : MonoBehaviour
                         if (pointOfInterest.y < roomCoordinates.y)
                         {
                             allowWest = true;
+                            childRoomCoords = new Vector2Int(roomCoordinates.x, roomCoordinates.y - 1);
+                            if (!childRoomCoordsList.Contains(childRoomCoords))
+                            {
+                                childRoomCoordsList.Add(childRoomCoords);
+                            }
                         }
                         else if (pointOfInterest.y > roomCoordinates.y)
                         {
                             allowEast = true;
+                            childRoomCoords = new Vector2Int(roomCoordinates.x, roomCoordinates.y + 1);
+                            if (!childRoomCoordsList.Contains(childRoomCoords))
+                            {
+                                childRoomCoordsList.Add(childRoomCoords);
+                            }
                         }
                     }
                 }
-                else  // go vertical
+                else  // go horizontal
                 {
                     if (pointOfInterest.y < roomCoordinates.y)
                     {
                         allowWest = true;
+                        childRoomCoords = new Vector2Int(roomCoordinates.x, roomCoordinates.y - 1);
+                        if (!childRoomCoordsList.Contains(childRoomCoords))
+                        {
+                            childRoomCoordsList.Add(childRoomCoords);
+                        }
                     }
                     else if (pointOfInterest.y > roomCoordinates.y)
                     {
                         allowEast = true;
+                        childRoomCoords = new Vector2Int(roomCoordinates.x, roomCoordinates.y + 1);
+                        if (!childRoomCoordsList.Contains(childRoomCoords))
+                        {
+                            childRoomCoordsList.Add(childRoomCoords);
+                        }
                     }
                     else
                     {
@@ -230,10 +363,20 @@ public class LevelController : MonoBehaviour
                         if (pointOfInterest.x < roomCoordinates.x)
                         {
                             allowNorth = true;
+                            childRoomCoords = new Vector2Int(roomCoordinates.x - 1, roomCoordinates.y);
+                            if (!childRoomCoordsList.Contains(childRoomCoords))
+                            {
+                                childRoomCoordsList.Add(childRoomCoords);
+                            }
                         }
                         else if (pointOfInterest.x > roomCoordinates.x)
                         {
                             allowSouth = true;
+                            childRoomCoords = new Vector2Int(roomCoordinates.x + 1, roomCoordinates.y);
+                            if (!childRoomCoordsList.Contains(childRoomCoords))
+                            {
+                                childRoomCoordsList.Add(childRoomCoords);
+                            }
                         }
                     }
                 }
@@ -241,24 +384,76 @@ public class LevelController : MonoBehaviour
         }
 
         // RNG still-closed doors of rooms not generated (if the adjacent room is generated and the door is still closed, it's already been decided that the door will be closed)
-        if (!allowNorth && !IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
+        if (!allowNorth && !IsRoomBuilt(roomCoordinates.x - 1, roomCoordinates.y, out bool outOfBounds) && !outOfBounds)
         {
-            allowNorth = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowNorth = LevelSeed.RoomDoorDataList[roomCoordinates].NorthEnabled;
+            }
+            else
+            {
+                allowNorth = Random.Range(0, 100) < openDoorChance;
+            }
         }
         if (!allowSouth && !IsRoomBuilt(roomCoordinates.x + 1, roomCoordinates.y, out outOfBounds) && !outOfBounds)
         {
-            allowSouth = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowSouth = LevelSeed.RoomDoorDataList[roomCoordinates].SouthEnabled;
+            }
+            else
+            {
+                allowSouth = Random.Range(0, 100) < openDoorChance;
+            }
         }
         if (!allowWest && !IsRoomBuilt(roomCoordinates.x, roomCoordinates.y - 1, out outOfBounds) && !outOfBounds)
         {
-            allowWest = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowWest = LevelSeed.RoomDoorDataList[roomCoordinates].WestEnabled;
+            }
+            else
+            {
+                allowWest = Random.Range(0, 100) < openDoorChance;
+            }
         }
         if (!allowEast && !IsRoomBuilt(roomCoordinates.x, roomCoordinates.y + 1, out outOfBounds) && !outOfBounds)
         {
-            allowEast = Random.Range(0, 100) < openDoorChance;
+            if (useSeed)
+            {
+                allowEast = LevelSeed.RoomDoorDataList[roomCoordinates].EastEnabled;
+            }
+            else
+            {
+                allowEast = Random.Range(0, 100) < openDoorChance;
+            }
         }
 
-        return new RoomDoorData(allowNorth, allowSouth, allowWest, allowEast);
+        // Add other child rooms based on the doors we've opened
+        childRoomCoords = new Vector2Int(roomCoordinates.x - 1, roomCoordinates.y);
+        if (allowNorth && !childRoomCoordsList.Contains(childRoomCoords))
+        {
+            childRoomCoordsList.Add(childRoomCoords);
+        }
+        childRoomCoords = new Vector2Int(roomCoordinates.x + 1, roomCoordinates.y);
+        if (allowSouth && !childRoomCoordsList.Contains(childRoomCoords))
+        {
+            childRoomCoordsList.Add(childRoomCoords);
+        }
+        childRoomCoords = new Vector2Int(roomCoordinates.x, roomCoordinates.y - 1);
+        if (allowWest && !childRoomCoordsList.Contains(childRoomCoords))
+        {
+            childRoomCoordsList.Add(childRoomCoords);
+        }
+        childRoomCoords = new Vector2Int(roomCoordinates.x, roomCoordinates.y + 1);
+        if (allowEast && !childRoomCoordsList.Contains(childRoomCoords))
+        {
+            childRoomCoordsList.Add(childRoomCoords);
+        }
+
+        RoomDoorData doorData = new RoomDoorData(allowNorth, allowSouth, allowWest, allowEast);
+
+        return doorData;
     }
 
     private void BuildRoom(int rowIndex, int columnIndex, RoomType roomType, RoomDoorData doors)
@@ -314,17 +509,17 @@ public class LevelController : MonoBehaviour
         roomController.SetMinimapVisibility(false);
     }
 
-    private bool IsRoomBuilt(int rowIndex, int columnIndex, out bool outOfBounds)
+    private bool IsRoomBuilt(int rowIndex, int columnIndex, out bool isOutOfBounds)
     {
         // We're outside the bounds of the level, therefore we haven't visited the room (technically)
         if (rowIndex < 0 || rowIndex >= LevelDimensions.x || columnIndex < 0 || columnIndex >= LevelDimensions.y)
         {
-            outOfBounds = true;
+            isOutOfBounds = true;
             return false;
         }
 
         // If the room isn't null, we've visited it
-        outOfBounds = false;
+        isOutOfBounds = false;
         return !(RoomGrid[rowIndex][columnIndex] is null);
     }
     

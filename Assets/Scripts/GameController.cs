@@ -10,7 +10,9 @@ public class GameController : MonoBehaviour
     private GameObject Player;
     [SerializeField]
     private GameObject Selector;
-    
+    [SerializeField]
+    private bool DebugMode;
+
     private int SelectedTargetIndex = 0;
     private LevelController _levelController;
     private LevelController LevelController
@@ -29,6 +31,12 @@ public class GameController : MonoBehaviour
     #region Unity Events
     public void Awake()
     {
+        if (!IsLoggingEnabled())
+        {
+            Debug.Log("Logging is currently disabled. For verbose output and diagnostics, please enable debug mode in the game controller script.");
+        }
+        DebugLog("GameController's Awake UnityEvent was called.");
+
         ResetLevel();
     }
     public void Left(InputAction.CallbackContext context)
@@ -161,6 +169,20 @@ public class GameController : MonoBehaviour
                 interactable.GetComponent<CreatureController>().Interact(enemyTargets);
             }
         }
+    }
+    #endregion
+
+    #region Logging
+    public void DebugLog(string message)
+    {
+        if (IsLoggingEnabled())
+        {
+            Debug.Log(message);
+        }
+    }
+    private bool IsLoggingEnabled()
+    {
+        return DebugMode;
     }
     #endregion
 }
