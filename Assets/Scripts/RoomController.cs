@@ -24,8 +24,9 @@ public class RoomController : MonoBehaviour
     public void Awake()
     {
         InteractableList = new List<GameObject>();
+        Seed levelSeed = GameObject.FindGameObjectWithTag("GameController").GetComponent<LevelController>().LevelSeed;
 
-        int numberOfEnemies = Random.Range(NumberOfEnemies.x, NumberOfEnemies.y + 1);
+        int numberOfEnemies = levelSeed.RandomInteger(NumberOfEnemies.x, NumberOfEnemies.y + 1);
         GameObject spawnedInteractable;
 
         if (ShouldContainLadder)
@@ -44,7 +45,7 @@ public class RoomController : MonoBehaviour
             InteractableList.Add(spawnedInteractable);
         }
 
-        int numberOfCupcakes = Random.Range(NumberOfCupcakes.x, NumberOfCupcakes.y + 1);
+        int numberOfCupcakes = levelSeed.RandomInteger(NumberOfCupcakes.x, NumberOfCupcakes.y + 1);
         for (int cupcakeCounter = 0; cupcakeCounter < numberOfCupcakes; cupcakeCounter++)
         {
             spawnedInteractable = Instantiate(RoomElementData.CupcakePrefab);
