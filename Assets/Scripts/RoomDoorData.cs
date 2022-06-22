@@ -7,6 +7,16 @@ public class RoomDoorData
     public bool WestEnabled;
     public bool EastEnabled;
 
+    public RoomDoorData()
+    { }
+    public RoomDoorData(bool north, bool south, bool west, bool east)
+    {
+        NorthEnabled = north;
+        SouthEnabled = south;
+        WestEnabled = west;
+        EastEnabled = east;
+    }
+
     public override string ToString()
     {
         // Take the four booleans and build an array,
@@ -16,16 +26,6 @@ public class RoomDoorData
         byte[] bytes = new byte[1];
         bitField.CopyTo(bytes, 0);
         return bytes[0].ToString();
-    }
-
-    public RoomDoorData()
-    { }
-    public RoomDoorData(bool north, bool south, bool west, bool east)
-    {
-        NorthEnabled = north;
-        SouthEnabled = south;
-        WestEnabled = west;
-        EastEnabled = east;
     }
 
     /// <summary>
