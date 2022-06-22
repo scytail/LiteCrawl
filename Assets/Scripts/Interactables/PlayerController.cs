@@ -8,6 +8,8 @@ public class PlayerController : CreatureController
     [SerializeField]
     private GameObject HealthUIText;
 
+    private int Score;
+
     public void Awake()
     {
         UpdateUI();
@@ -20,20 +22,21 @@ public class PlayerController : CreatureController
             switch (target.tag)
             {
                 case "Enemy":
-                    Attack(target);
+                    Score += Attack(target);
                     break;
                 case "Pickup":
-                    PickUp(target);
+                    Score += PickUp(target);
                     break;
             }
         }
         UpdateUI();
     }
 
-    public override void TakeDamage(int amount)
+    public override int TakeDamage(int amount)
     {
-        base.TakeDamage(amount);
+        int pointValue = base.TakeDamage(amount);
         UpdateUI();
+        return pointValue;
     }
     public override void GainHealth(int amount)
     {
@@ -48,6 +51,7 @@ public class PlayerController : CreatureController
 
     public void OnDestroy()
     {
+        PlayerPrefs.SetInt("score", Score);
         SceneManager.LoadScene(2);
     }
 }

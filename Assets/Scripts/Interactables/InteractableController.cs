@@ -2,6 +2,9 @@ using UnityEngine;
 
 public abstract class InteractableController : MonoBehaviour
 {
+    [SerializeField]
+    protected int pointValue;
+
     private GameObject _gameController;
     protected GameObject GameManager { 
         get
