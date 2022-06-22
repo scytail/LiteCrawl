@@ -12,14 +12,17 @@ public abstract class CreatureController : InteractableController
 
     public abstract void Interact(List<GameObject> targetList);
 
-    public virtual void TakeDamage(int amount)
+    public virtual int TakeDamage(int amount)
     {
         CurrentHealth -= amount;
 
         if (CurrentHealth <= 0)
         {
             DestroySelf();
+            return pointValue;
         }
+
+        return 0;
     }
 
     public virtual void GainHealth(int amount)
@@ -32,12 +35,12 @@ public abstract class CreatureController : InteractableController
         }
     }
 
-    protected void Attack(GameObject target)
+    protected int Attack(GameObject target)
     {
-        target.GetComponent<CreatureController>().TakeDamage(BaseDamage);
+        return target.GetComponent<CreatureController>().TakeDamage(BaseDamage);
     }
-    protected void PickUp(GameObject target)
+    protected int PickUp(GameObject target)
     {
-        target.GetComponent<ItemController>().Use(gameObject);
+        return target.GetComponent<ItemController>().Use(gameObject);
     }
 }
